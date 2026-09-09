@@ -1,0 +1,8 @@
+@layer theme;
+
+@import "tailwindcss/theme.css" layer(theme);
+/* Utilities are deliberately left unlayered: on web, react-native-web injects its
+   own unlayered rules (e.g. View's `background-color: transparent`), and any
+   @layer always loses to unlayered CSS. Layered utilities silently do nothing. */
+@import "tailwindcss/utilities.css";
+@import "nativewind/theme";
