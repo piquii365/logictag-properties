@@ -40,4 +40,16 @@ export class ZimraProfile extends TimestampEntity {
 
   @Column({ type: 'int', default: 12 })
   taxYearEndMonth!: number;
+
+  /** Uploaded ZIMRA / compliance documents (e.g. ITF263, VAT certificates).
+   * Each entry: { id, name, url, mime, sizeBytes, uploadedAt }. */
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  documents!: Array<{
+    id: string;
+    name: string;
+    url: string;
+    mime: string;
+    sizeBytes: number;
+    uploadedAt: string;
+  }>;
 }

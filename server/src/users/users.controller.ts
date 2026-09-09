@@ -11,11 +11,14 @@ import {
   BadRequestException,
   UploadedFile,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SetRoleDto } from './dto/set-role.dto';
+import { SetStatusDto } from './dto/set-status.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/role.decorator';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
@@ -30,8 +33,11 @@ export class UserController {
   // POST /users, because it accepted a `role` and let anyone mint an admin.
 
   @Get()
-  findAll(@CurrentUser() user: AuthJwtPayload) {
-    return this.userService.findAll(user);
+  findAll(
+    @CurrentUser() user: AuthJwtPayload,
+    @Query() query: ListUsersQueryDto,
+  ) {
+    return this.userService.findAll(user, query);
   }
 
   @Get(':id')
@@ -56,8 +62,23 @@ export class UserController {
   /** Role changes are an admin action, never a self-service field. */
   @Roles(UserRole.ADMIN)
   @Patch(':id/role')
-  setRole(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetRoleDto) {
-    return this.userService.setRole(id, dto.role);
+  setRole(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetRoleDto,
+  ) {
+    return this.userService.setRole(id, dto.role, user.id);
+  }
+
+  /** Suspend / reactivate an account. Admin only. */
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/status')
+  setStatus(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetStatusDto,
+  ) {
+    return this.userService.setStatus(id, dto.status, user.id);
   }
 
   @Post(':id/avatar')

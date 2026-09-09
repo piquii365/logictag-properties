@@ -58,6 +58,16 @@ export class User extends TimestampEntity {
   @Column({ type: 'timestamptz', nullable: true })
   emailVerifiedAt!: Date | null;
 
+  /** Email awaiting confirmation before it replaces `email`. */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  pendingEmail!: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  emailChangeToken!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailChangeTokenExpiration!: Date | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   passwordResetToken!: string | null;
 

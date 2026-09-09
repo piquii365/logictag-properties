@@ -50,7 +50,15 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (email: string, token: string, newPassword: string) => Promise<void>;
+  resetPassword: (
+    email: string,
+    token: string,
+    newPassword: string,
+  ) => Promise<void>;
+  /** Stages a new email; returns the message (a code is sent to the new address). */
+  requestEmailChange: (newEmail: string) => Promise<string>;
+  /** Confirms a staged email change with the code sent to the new address. */
+  confirmEmailChange: (token: string) => Promise<string>;
   /** Re-pulls /auth/me — call after editing the profile or avatar so the rest
    * of the app (header, more screen, ...) picks up the change. */
   refreshProfile: () => Promise<void>;
@@ -173,6 +181,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const requestEmailChange = useCallback(async (newEmail: string) => {
+    const res = await api<{ message: string }>("/auth/email/request-change", {
+      method: "POST",
+      body: { newEmail },
+    });
+    return res.message;
+  }, []);
+
+  const confirmEmailChange = useCallback(async (token: string) => {
+    const res = await api<{ message: string; email: string }>(
+      "/auth/email/confirm-change",
+      {
+        method: "POST",
+        skipAuth: true,
+        body: { token },
+      },
+    );
+    return res.email;
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     setUser(await loadProfile());
   }, []);
@@ -187,9 +215,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       forgotPassword,
       resetPassword,
+      requestEmailChange,
+      confirmEmailChange,
       refreshProfile,
     }),
-    [user, booting, signIn, signUp, signInWithGoogle, signOut, forgotPassword, resetPassword, refreshProfile],
+    [
+      user,
+      booting,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signOut,
+      forgotPassword,
+      resetPassword,
+      requestEmailChange,
+      confirmEmailChange,
+      refreshProfile,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

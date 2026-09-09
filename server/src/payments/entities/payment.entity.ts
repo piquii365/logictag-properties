@@ -84,6 +84,10 @@ export class Payment extends TimestampEntity {
   @Column({ type: 'jsonb', nullable: true })
   rawResponse!: Record<string, unknown> | null;
 
+  /** URL of an uploaded proof-of-payment document (tenant or manager). */
+  @Column({ type: 'varchar', length: 512, name: 'proof_url', nullable: true })
+  proofUrl!: string | null;
+
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId!: string | null;
 

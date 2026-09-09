@@ -68,4 +68,8 @@ export class CreateSubscriptionPlanDto {
   @IsOptional()
   @IsObject()
   features?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

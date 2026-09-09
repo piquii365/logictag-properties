@@ -1,15 +1,22 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
+import { documentMulterOptions } from '../common/multer/multer.config';
 import { CreateTenantIdentificationDto } from './dto/create-tenant-identification.dto';
 import { CreateTaxObligationDto } from './dto/create-tax-obligation.dto';
 import { CreateZimraProfileDto } from './dto/create-zimra-profile.dto';
@@ -31,6 +38,25 @@ export class ComplianceOperationsController {
   @Get('zimra/profiles')
   listProfiles(@CurrentUser() user: AuthJwtPayload) {
     return this.compliance.listProfiles(user);
+  }
+
+  @Post('zimra/profiles/:id/documents')
+  @UseInterceptors(FileInterceptor('file', documentMulterOptions('compliance')))
+  uploadProfileDocument(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.compliance.uploadProfileDocument(user, id, file);
+  }
+
+  @Delete('zimra/profiles/:id/documents/:documentId')
+  removeProfileDocument(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('documentId') documentId: string,
+  ) {
+    return this.compliance.removeProfileDocument(user, id, documentId);
   }
 
   @Post('tenants/:tenantId/identification')
@@ -96,5 +122,21 @@ export class ComplianceOperationsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.compliance.getTaxReturn(user, id);
+  }
+
+  @Get('tax-returns/:id.pdf')
+  async downloadTaxReturnPdf(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() response: Response,
+  ) {
+    const pdf = await this.compliance.getTaxReturnPdf(user, id);
+    response
+      .type('application/pdf')
+      .setHeader(
+        'Content-Disposition',
+        `attachment; filename="tax-return-${id}.pdf"`,
+      )
+      .send(pdf);
   }
 }

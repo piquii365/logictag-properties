@@ -19,6 +19,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RequestEmailChangeDto } from './dto/request-email-change.dto';
+import { ConfirmEmailChangeDto } from './dto/confirm-email-change.dto';
 import type { AuthJwtPayload } from './types/jwt-payload.auth';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -97,6 +99,24 @@ export class AuthController {
       dto.currentPassword,
       dto.newPassword,
     );
+  }
+
+  /** Stage a new email. It only takes effect once the code is confirmed. */
+  @Post('email/request-change')
+  @HttpCode(HttpStatus.OK)
+  async requestEmailChange(
+    @CurrentUser() user: AuthJwtPayload,
+    @Body() dto: RequestEmailChangeDto,
+  ) {
+    return this.authService.requestEmailChange(user.id, dto.newEmail);
+  }
+
+  /** Confirm a staged email change with the code sent to the new address. */
+  @Public()
+  @Post('email/confirm-change')
+  @HttpCode(HttpStatus.OK)
+  async confirmEmailChange(@Body() dto: ConfirmEmailChangeDto) {
+    return this.authService.confirmEmailChange(dto.token);
   }
 
   @Public()

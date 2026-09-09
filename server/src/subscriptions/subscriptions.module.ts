@@ -7,12 +7,14 @@ import { Subscription } from './entities/subscription.entity';
 import { SubscriptionPayment } from './entities/subscription-payment.entity';
 import { Trial } from './entities/trial.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuditModule } from '../audit/audit.module';
 import { Unit } from '../properties/entities/unit.entity';
 import { Property } from '../properties/entities/property.entity';
 
 @Module({
   imports: [
     NotificationsModule,
+    AuditModule,
     TypeOrmModule.forFeature([
       SubscriptionPlan,
       Subscription,

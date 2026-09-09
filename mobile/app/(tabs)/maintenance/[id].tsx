@@ -13,6 +13,7 @@ import {
   Screen,
 } from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import {
   assignMaintenanceVendor,
   getMaintenanceEvents,
@@ -20,6 +21,7 @@ import {
   getVendors,
   updateMaintenanceStatus,
 } from "@/lib/queries";
+import { isManagementRole, isTenant } from "@/lib/roles";
 import { useFetch } from "@/lib/useFetch";
 import type { MaintenancePriority, MaintenanceStatus } from "@/lib/types";
 
@@ -38,12 +40,16 @@ const priorityTone = (p: MaintenancePriority) =>
   p === "high" || p === "emergency" ? "red" : p === "medium" ? "amber" : "muted";
 
 export default function RequestDetail() {
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   // id can be momentarily undefined on the very first render — never
   // template that into a URL as the literal string "undefined".
   const request = useFetch(() => (id ? getMaintenanceRequest(id) : Promise.resolve(null)), [id]);
   const events = useFetch(() => (id ? getMaintenanceEvents(id) : Promise.resolve([])), [id]);
   const vendors = useFetch(getVendors);
+
+  const isManagement = isManagementRole(user?.role);
+  const isTenantUser = isTenant(user?.role);
 
   const [pickingVendor, setPickingVendor] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -87,22 +93,33 @@ export default function RequestDetail() {
         {request.loading ? (
           <LoadingView />
         ) : request.error || !r ? (
-          <ErrorView message={request.error ?? "Request not found."} onRetry={request.refetch} />
+          <ErrorView
+            message={request.error ?? "Request not found."}
+            onRetry={request.refetch}
+          />
         ) : (
           <>
             <Card>
               <View className="flex-row items-start justify-between mb-2">
-                <Text className="text-[18px] font-bold text-[#0F2C4A] flex-1 pr-3">{r.title}</Text>
+                <Text className="text-[18px] font-bold text-[#0F2C4A] flex-1 pr-3">
+                  {r.title}
+                </Text>
                 <Badge text={r.priority} tone={priorityTone(r.priority)} />
               </View>
-              <Text className="text-[13px] text-[#6B7280] leading-5">{r.description}</Text>
+              <Text className="text-[13px] text-[#6B7280] leading-5">
+                {r.description}
+              </Text>
             </Card>
 
             <Card className="mt-3">
               <KV
                 k="Status"
                 v={STATUS_LABEL[r.status]}
-                tone={r.status === "resolved" || r.status === "closed" ? "#16A34A" : "#D97706"}
+                tone={
+                  r.status === "resolved" || r.status === "closed"
+                    ? "#16A34A"
+                    : "#D97706"
+                }
               />
               <Divider />
               <KV k="Unit" v={r.unit?.label ?? "—"} />
@@ -111,7 +128,10 @@ export default function RequestDetail() {
               <Divider />
               <KV k="Reported by" v={r.reportedBy?.name ?? "—"} />
               <Divider />
-              <KV k="Reported on" v={new Date(r.openedAt).toLocaleDateString()} />
+              <KV
+                k="Reported on"
+                v={new Date(r.openedAt).toLocaleDateString()}
+              />
               {r.vendor ? (
                 <>
                   <Divider />
@@ -121,7 +141,9 @@ export default function RequestDetail() {
             </Card>
 
             <Card className="mt-3">
-              <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">Activity</Text>
+              <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
+                Activity
+              </Text>
               {(events.data ?? []).length === 0 ? (
                 <Text className="text-[13px] text-[#6B7280] leading-5">
                   {new Date(r.openedAt).toLocaleString()} — Request submitted by{" "}
@@ -129,8 +151,12 @@ export default function RequestDetail() {
                 </Text>
               ) : (
                 (events.data ?? []).map((e) => (
-                  <Text key={e.id} className="text-[13px] text-[#6B7280] leading-5 mt-2 first:mt-0">
-                    {new Date(e.createdAt).toLocaleString()} — {e.type.replace(/_/g, " ")}
+                  <Text
+                    key={e.id}
+                    className="text-[13px] text-[#6B7280] leading-5 mt-2 first:mt-0"
+                  >
+                    {new Date(e.createdAt).toLocaleString()} —{" "}
+                    {e.type.replace(/_/g, " ")}
                     {e.notes ? `: ${e.notes}` : ""}
                   </Text>
                 ))
@@ -138,14 +164,20 @@ export default function RequestDetail() {
             </Card>
 
             {actionError ? (
-              <Text className="text-[13px] text-[#DC2626] mt-3">{actionError}</Text>
+              <Text className="text-[13px] text-[#DC2626] mt-3">
+                {actionError}
+              </Text>
             ) : null}
 
             {pickingVendor ? (
               <Card className="mt-3">
-                <Text className="text-[13px] font-semibold text-[#0F2C4A] mb-2">Choose a vendor</Text>
+                <Text className="text-[13px] font-semibold text-[#0F2C4A] mb-2">
+                  Choose a vendor
+                </Text>
                 {approvedVendors.length === 0 ? (
-                  <Text className="text-[13px] text-[#6B7280]">No approved vendors available yet.</Text>
+                  <Text className="text-[13px] text-[#6B7280]">
+                    No approved vendors available yet.
+                  </Text>
                 ) : (
                   approvedVendors.map((v) => (
                     <Pressable
@@ -153,29 +185,37 @@ export default function RequestDetail() {
                       onPress={() => assignVendor(v.id)}
                       className="py-2.5 border-t border-[#E5E9F0] first:border-t-0"
                     >
-                      <Text className="text-[14px] text-[#0F2C4A]">{v.name}</Text>
-                      <Text className="text-[12px] text-[#6B7280]">{v.city}</Text>
+                      <Text className="text-[14px] text-[#0F2C4A]">
+                        {v.name}
+                      </Text>
+                      <Text className="text-[12px] text-[#6B7280]">
+                        {v.city}
+                      </Text>
                     </Pressable>
                   ))
                 )}
               </Card>
             ) : null}
 
-            <View className="flex-row gap-3 mt-6">
-              <Btn
-                label="Assign Vendor"
-                variant="outline"
-                className="flex-1"
-                disabled={busy}
-                onPress={() => setPickingVendor((v) => !v)}
-              />
-              <Btn
-                label="Mark Resolved"
-                className="flex-1"
-                disabled={busy || !canResolve}
-                onPress={markResolved}
-              />
-            </View>
+            {!isTenantUser ? (
+              <View className="flex-row gap-3 mt-6">
+                {isManagement ? (
+                  <Btn
+                    label="Assign Vendor"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={busy}
+                    onPress={() => setPickingVendor((v) => !v)}
+                  />
+                ) : null}
+                <Btn
+                  label="Mark Resolved"
+                  className={isManagement ? "flex-1" : "w-full"}
+                  disabled={busy || !canResolve}
+                  onPress={markResolved}
+                />
+              </View>
+            ) : null}
           </>
         )}
       </Screen>

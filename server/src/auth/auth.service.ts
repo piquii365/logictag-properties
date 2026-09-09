@@ -42,6 +42,9 @@ const RESET_REQUESTED =
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
+/** Same TTL for email-change confirmation codes. */
+const EMAIL_CHANGE_TOKEN_TTL_MS = 60 * 60 * 1000;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -219,6 +222,56 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
+  async requestEmailChange(id: string, newEmail: string) {
+    const user = await this.userService.findOneById(id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    const email = newEmail.trim().toLowerCase();
+    if (email === user.email.toLowerCase()) {
+      throw new BadRequestException(
+        'New email is the same as your current email',
+      );
+    }
+    const token = randomBytes(32).toString('hex');
+    await this.userService.stageEmailChange(
+      user.id,
+      email,
+      this.hashResetToken(token),
+      new Date(Date.now() + EMAIL_CHANGE_TOKEN_TTL_MS),
+    );
+    await this.sendEmailChangeEmail(email, token);
+    return {
+      message:
+        'A confirmation code has been sent to the new email. Your email will only change once you confirm it.',
+    };
+  }
+
+  async confirmEmailChange(token: string) {
+    const tokenHash = this.hashResetToken(token);
+    const user = await this.userService.getUserForEmailChange(tokenHash);
+    const isValid =
+      !!user &&
+      this.isResetTokenValid(
+        token,
+        user.emailChangeToken,
+        user.emailChangeTokenExpiration,
+      );
+    if (!user || !isValid) {
+      throw new BadRequestException(
+        'Invalid or expired email confirmation code',
+      );
+    }
+    const updated = await this.userService.applyEmailChange(user.id);
+    if (!updated) {
+      throw new BadRequestException('User not found');
+    }
+    return {
+      message: 'Email updated successfully',
+      email: updated.email,
+    };
+  }
+
   async getProfile(id: string) {
     const user = await this.userService.findOne(id);
     if (!user) {
@@ -241,6 +294,17 @@ export class AuthService {
     // flow is testable end to end; swap for a real transport when one exists.
     if (process.env.NODE_ENV !== 'production') {
       this.logger.debug(`Password reset token for ${email}: ${token}`);
+    }
+    return Promise.resolve();
+  }
+
+  private sendEmailChangeEmail(email: string, token: string) {
+    // ponytail: no mailer wired up yet. Log the code in non-production so the
+    // flow is testable end to end; swap for a real transport when one exists.
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(
+        `Email change confirmation code for ${email}: ${token}`,
+      );
     }
     return Promise.resolve();
   }

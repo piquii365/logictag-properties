@@ -12,7 +12,9 @@ import {
   StatusDot,
   StatusText,
 } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { getMaintenanceRequests } from "@/lib/queries";
+import { isVendor } from "@/lib/roles";
 import { useFetch } from "@/lib/useFetch";
 import type { MaintenancePriority, MaintenanceStatus } from "@/lib/types";
 
@@ -42,6 +44,8 @@ function matchesFilter(status: MaintenanceStatus, filter: string) {
 }
 
 export default function Maintenance() {
+  const { user } = useAuth();
+  const isVendorUser = isVendor(user?.role);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<string>("All");
   const { data, loading, error, refetch } = useFetch(getMaintenanceRequests);
@@ -57,9 +61,18 @@ export default function Maintenance() {
 
   return (
     <View className="flex-1 bg-[#F4F6F9]">
-      <Header title="Maintenance" back={false} right="notifications-outline" badge />
+      <Header
+        title="Maintenance"
+        back={false}
+        right="notifications-outline"
+        badge
+      />
       <Screen>
-        <SearchBar placeholder="Search requests" value={q} onChangeText={setQ} />
+        <SearchBar
+          placeholder="Search requests"
+          value={q}
+          onChangeText={setQ}
+        />
         <View className="mb-4">
           <Pills options={FILTERS} value={filter} onChange={setFilter} />
         </View>
@@ -73,12 +86,22 @@ export default function Maintenance() {
             {list.map((r) => (
               <Pressable
                 key={r.id}
-                onPress={() => router.push({ pathname: "/(tabs)/maintenance/[id]", params: { id: r.id } })}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/maintenance/[id]",
+                    params: { id: r.id },
+                  })
+                }
                 className="bg-white border border-[#E5E9F0] rounded-2xl p-4 mb-3 transition-transform duration-100 ease-out active:scale-[0.98]"
               >
                 <View className="flex-row items-start justify-between">
-                  <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">{r.title}</Text>
-                  <StatusDot text={r.priority} tone={priorityTone(r.priority)} />
+                  <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">
+                    {r.title}
+                  </Text>
+                  <StatusDot
+                    text={r.priority}
+                    tone={priorityTone(r.priority)}
+                  />
                 </View>
                 <Text className="text-[12px] text-[#6B7280] mt-1">
                   {r.unit?.label ?? "—"} · {r.unit?.property?.name ?? "—"}
@@ -87,7 +110,10 @@ export default function Maintenance() {
                   <Text className="text-[11px] text-[#94A3B8]">
                     {r.reference} · {new Date(r.openedAt).toLocaleDateString()}
                   </Text>
-                  <StatusText text={STATUS_LABEL[r.status]} tone={statusTone(r.status)} />
+                  <StatusText
+                    text={STATUS_LABEL[r.status]}
+                    tone={statusTone(r.status)}
+                  />
                 </View>
               </Pressable>
             ))}
@@ -100,7 +126,9 @@ export default function Maintenance() {
           </>
         )}
       </Screen>
-      <Fab onPress={() => router.push("/(tabs)/maintenance/new")} />
+      {!isVendorUser ? (
+        <Fab onPress={() => router.push("/(tabs)/maintenance/new")} />
+      ) : null}
     </View>
   );
 }

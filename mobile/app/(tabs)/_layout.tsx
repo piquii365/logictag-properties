@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { C } from "@/lib/data";
+import { isManagementRole } from "@/lib/roles";
 
 function icon(name: keyof typeof Ionicons.glyphMap) {
   function TabIcon({ color, size }: { color: string; size: number }) {
@@ -12,7 +13,10 @@ function icon(name: keyof typeof Ionicons.glyphMap) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
-  const isTenant = user?.role === "tenant";
+  const isManagement = isManagementRole(user?.role);
+  // Tenants & vendors don't manage a portfolio, so they don't get the
+  // Properties tab. They still get Payments (their own) + Maintenance.
+  const showProperties = isManagement;
   return (
     <Tabs
       screenOptions={{
@@ -29,7 +33,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="properties"
-        options={{ title: "Properties", tabBarIcon: icon("business") }}
+        options={{
+          title: "Properties",
+          tabBarIcon: icon("business"),
+          href: showProperties ? undefined : null,
+        }}
       />
       <Tabs.Screen
         name="maintenance"
@@ -37,11 +45,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="payments"
-        options={{
-          title: "Pay Rent",
-          tabBarIcon: icon("card"),
-          href: isTenant ? undefined : null,
-        }}
+        options={{ title: "Payments", tabBarIcon: icon("card") }}
       />
       <Tabs.Screen
         name="more"
@@ -59,6 +63,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="help" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="compliance" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
+      <Tabs.Screen name="charges" options={{ href: null }} />
+      <Tabs.Screen name="subscriptions" options={{ href: null }} />
     </Tabs>
   );
 }

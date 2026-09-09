@@ -190,6 +190,7 @@ export type Payment = {
   status: PaymentStatus;
   paidAt: string | null;
   createdAt: string;
+  proofUrl: string | null;
 };
 
 export type SubscriptionPlan = {
@@ -204,29 +205,47 @@ export type SubscriptionPlan = {
   customPricing: boolean;
   currency: string;
   billingInterval: string;
-  trialDays?: number | null;
+  trialDays: number | null;
   isActive: boolean;
+  /** JSON object of feature labels keyed by a slug, e.g. { units: "Up to 50 units" }. */
+  features: Record<string, string>;
+  notificationSettings: Record<string, unknown>;
 };
+
+export type SubscriptionStatus =
+  "trialing" | "active" | "past_due" | "canceled" | "expired";
 
 export type Subscription = {
   id: string;
   planId: string;
-  status: string;
+  status: SubscriptionStatus;
   managedUnits: number;
   agreedPricePerUnitMinor: string | null;
   startedAt: string;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
   canceledAt: string | null;
-  trialEndsAt?: string | null;
+  endedAt: string | null;
+  trialEndsAt: string | null;
+  provider: "pesepay" | null;
+  providerReference: string | null;
+  createdAt: string;
+  /** Loaded by the server so the client can render plan-derived fields. */
+  plan: SubscriptionPlan;
+  /** Loaded for admins so they can see which user owns the subscription. */
+  user?: AdminUser;
 };
+
+export type SubscriptionPaymentStatus = "pending" | "succeeded" | "failed";
 
 export type SubscriptionPayment = {
   id: string;
   subscriptionId: string;
   amountMinor: string;
   currency: string;
-  status: string;
+  provider: string | null;
+  providerReference: string | null;
+  status: SubscriptionPaymentStatus;
   paidAt: string | null;
   createdAt: string;
 };
@@ -267,6 +286,7 @@ export type AiPrediction = {
 
 export type ComplianceProfile = {
   id: string;
+  organizationId: string;
   tin: string;
   taxpayerName: string | null;
   taxpayerType: string;
@@ -274,6 +294,7 @@ export type ComplianceProfile = {
   vatRegistered: boolean;
   presumptiveRentalRegistered: boolean;
   taxYearEndMonth: number;
+  documents: ComplianceDocument[];
 };
 
 export type TaxObligation = {
@@ -287,4 +308,119 @@ export type TaxObligation = {
   currency: string;
   dueDate: string;
   status: string;
+};
+
+// ── Admin console ────────────────────────────────────────────────
+
+/** A user row as returned by the admin directory endpoint. */
+export type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  status: string;
+  avatarUrl: string | null;
+};
+
+export type UserListResponse = {
+  items: AdminUser[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type UserListFilters = {
+  role?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+/** A subscription payment with its subscription, plan and paying user loaded. */
+export type SubscriptionPaymentWithRelations = SubscriptionPayment & {
+  subscription: Subscription & {
+    user: AdminUser;
+  };
+};
+
+export type AuditLog = {
+  id: string;
+  userId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  changes: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
+export type AuditLogListResponse = {
+  items: AuditLog[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type SystemOverview = {
+  counts: {
+    users: number;
+    properties: number;
+    units: number;
+    subscriptions: number;
+    subscriptionPlans: number;
+    subscriptionPayments: number;
+    payments: number;
+    auditLogs: number;
+  };
+  runtime: {
+    node: string;
+    platform: string;
+    uptimeSeconds: number;
+    memoryMb: number;
+    env: string;
+    now: string;
+  };
+};
+
+// ── Compliance documents & tax returns ───────────────────────────
+
+export type ComplianceDocument = {
+  id: string;
+  name: string;
+  url: string;
+  mime: string;
+  sizeBytes: number;
+  uploadedAt: string;
+};
+
+export type TaxReturn = {
+  id: string;
+  organizationId: string;
+  zimraProfileId: string;
+  taxType: string;
+  taxPeriodStart: string;
+  taxPeriodEnd: string;
+  status: string;
+  grossRentalIncome: string;
+  allowableDeductions: string;
+  netIncome: string;
+  taxDue: string;
+  taxPaid: string;
+  taxBalance: string;
+  currency: string;
+  generatedAt: string;
+  lines?: TaxReturnLine[];
+};
+
+export type TaxReturnLine = {
+  id: string;
+  taxReturnId: string;
+  lineType: string;
+  description: string;
+  amount: string;
+  createdAt: string;
 };

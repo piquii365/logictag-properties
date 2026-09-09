@@ -30,9 +30,12 @@ export default function Processing() {
         router.replace({
           pathname: "/(tabs)/payments/receipt",
           params: {
+            paymentId,
             amount,
             reference: confirmed.merchantReference,
-            date: new Date(confirmed.paidAt ?? confirmed.createdAt).toLocaleString(),
+            date: new Date(
+              confirmed.paidAt ?? confirmed.createdAt,
+            ).toLocaleString(),
           },
         });
       } catch (err) {

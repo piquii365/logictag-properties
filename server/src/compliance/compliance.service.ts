@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -127,6 +128,50 @@ export class ComplianceService {
       where: seesEverything(user) ? {} : { organizationId: user.id },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /** Attach a ZIMRA / compliance document to a profile. Owners may only touch
+   * their own profile; admins may attach to any. */
+  async uploadProfileDocument(
+    user: AuthJwtPayload,
+    profileId: string,
+    file?: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const profile = await this.profiles.findOne({ where: { id: profileId } });
+    if (!profile) throw new NotFoundException('ZIMRA profile not found');
+    if (!seesEverything(user) && profile.organizationId !== user.id) {
+      throw new ForbiddenException('You can only manage your own profile');
+    }
+    const documents = Array.isArray(profile.documents) ? profile.documents : [];
+    documents.push({
+      id: file.filename,
+      name: file.originalname,
+      url: `/uploads/compliance/${file.filename}`,
+      mime: file.mimetype,
+      sizeBytes: file.size,
+      uploadedAt: new Date().toISOString(),
+    });
+    profile.documents = documents;
+    return this.profiles.save(profile);
+  }
+
+  /** Remove a previously uploaded compliance document. */
+  async removeProfileDocument(
+    user: AuthJwtPayload,
+    profileId: string,
+    documentId: string,
+  ) {
+    const profile = await this.profiles.findOne({ where: { id: profileId } });
+    if (!profile) throw new NotFoundException('ZIMRA profile not found');
+    if (!seesEverything(user) && profile.organizationId !== user.id) {
+      throw new ForbiddenException('You can only manage your own profile');
+    }
+    const documents = (
+      Array.isArray(profile.documents) ? profile.documents : []
+    ).filter((doc) => doc.id !== documentId);
+    profile.documents = documents;
+    return this.profiles.save(profile);
   }
 
   async saveTenantIdentification(
@@ -321,6 +366,43 @@ export class ComplianceService {
     return { ...taxReturn, lines };
   }
 
+  /** Render a stored tax return as a downloadable PDF. */
+  async getTaxReturnPdf(user: AuthJwtPayload, id: string): Promise<Buffer> {
+    this.assertReadable(user);
+    const taxReturn = await this.returns.findOne({ where: { id } });
+    if (!taxReturn) throw new NotFoundException('Tax return not found');
+    const profile = await this.profiles.findOne({
+      where: { id: taxReturn.zimraProfileId },
+    });
+    const lines = await this.returnLines.find({
+      where: { taxReturnId: id },
+      order: { lineType: 'ASC', createdAt: 'ASC' },
+    });
+
+    const text = [
+      'ZIMRA TAX RETURN',
+      `Taxpayer: ${profile?.taxpayerName ?? ''} (TIN ${profile?.tin ?? ''})`,
+      `Tax type: ${taxReturn.taxType}`,
+      `Period: ${taxReturn.taxPeriodStart} to ${taxReturn.taxPeriodEnd}`,
+      `Status: ${taxReturn.status}`,
+      `Generated: ${taxReturn.generatedAt?.toISOString().slice(0, 10) ?? ''}`,
+      '',
+      `Gross rental income: ${taxReturn.grossRentalIncome}`,
+      `Allowable deductions: ${taxReturn.allowableDeductions}`,
+      `Net income: ${taxReturn.netIncome}`,
+      `Tax due: ${taxReturn.taxDue}`,
+      `Tax paid: ${taxReturn.taxPaid}`,
+      `Tax balance: ${taxReturn.taxBalance}`,
+      `Currency: ${taxReturn.currency}`,
+      '',
+      'Line items',
+      ...lines.map(
+        (line) => `${line.lineType} | ${line.description} | ${line.amount}`,
+      ),
+    ];
+    return createPdf(text);
+  }
+
   private calculateTax(amountMinor: string, rate: string) {
     const [whole, fraction = ''] = rate.split('.');
     const rateScaled = BigInt(`${whole}${fraction.padEnd(4, '0').slice(0, 4)}`);
@@ -338,4 +420,39 @@ export class ComplianceService {
       throw new ForbiddenException('Vendors cannot access compliance data');
     }
   }
+}
+
+/** Minimal single-page PDF renderer (mirrors reports.service). */
+function createPdf(lines: string[]): Buffer {
+  const content = [
+    'BT',
+    '/F1 11 Tf',
+    '50 790 Td',
+    ...lines.flatMap((line) => [`(${escapePdfText(line)}) Tj`, '0 -16 Td']),
+    'ET',
+  ].join('\n');
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(content, 'utf8')} >>\nstream\n${content}\nendstream`,
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets: number[] = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf, 'utf8'));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xref = Buffer.byteLength(pdf, 'utf8');
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index <= objects.length; index += 1) {
+    pdf += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf, 'utf8');
+}
+
+function escapePdfText(value: string): string {
+  return value.replace(/[\\()]/g, '\\$&').replace(/[^\x20-\x7E]/g, '?');
 }

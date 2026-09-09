@@ -25,3 +25,28 @@ export const SELF_ASSIGNABLE_ROLES: { id: UserRole; title: string; sub: string; 
 export function roleLabel(role: UserRole): string {
   return SELF_ASSIGNABLE_ROLES.find((r) => r.id === role)?.title ?? "Admin";
 }
+
+// ── Role groups ────────────────────────────────────────────────────
+// Central place for "who sees what". Screens and menus branch on these so a
+// tenant/vendor never sees portfolio-management UI they can't act on.
+
+/** Roles that manage a property portfolio (see everything they own/manage). */
+export const MANAGEMENT_ROLES: ReadonlySet<UserRole> = new Set([
+  "landlord",
+  "property_manager",
+  "staff",
+  "admin",
+]);
+
+/** Roles that are self-service occupants/service providers (slimmed-down app). */
+export const SELF_SERVICE_ROLES: ReadonlySet<UserRole> = new Set([
+  "tenant",
+  "vendor",
+]);
+
+export const isManagementRole = (role?: UserRole | null) =>
+  !!role && MANAGEMENT_ROLES.has(role);
+
+export const isTenant = (role?: UserRole | null) => role === "tenant";
+export const isVendor = (role?: UserRole | null) => role === "vendor";
+export const isAdmin = (role?: UserRole | null) => role === "admin";

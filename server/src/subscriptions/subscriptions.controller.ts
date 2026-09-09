@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -11,9 +12,11 @@ import { SubscriptionsService } from './subscriptions.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto';
+import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { StartTrialDto } from './dto/start-trial.dto';
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto';
+import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 
 @Controller()
 export class SubscriptionsController {
@@ -41,6 +44,14 @@ export class SubscriptionsController {
     return this.subscriptions.updatePlan(user, id, dto);
   }
 
+  @Delete('subscription-plans/:id')
+  removePlan(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.subscriptions.removePlan(user, id);
+  }
+
   @Get('subscriptions')
   findAll(@CurrentUser() user: AuthJwtPayload) {
     return this.subscriptions.findAll(user);
@@ -49,6 +60,34 @@ export class SubscriptionsController {
   @Post('subscriptions')
   subscribe(@CurrentUser() user: AuthJwtPayload, @Body() dto: SubscribeDto) {
     return this.subscriptions.subscribe(user, dto);
+  }
+
+  /** Admin-only: create a subscription for a specific user. */
+  @Post('subscriptions/admin')
+  adminCreateSubscription(
+    @CurrentUser() user: AuthJwtPayload,
+    @Body() dto: CreateSubscriptionDto,
+  ) {
+    return this.subscriptions.adminCreateSubscription(user, dto);
+  }
+
+  /** Admin-only: update an existing subscription. */
+  @Patch('subscriptions/:id')
+  adminUpdateSubscription(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateSubscriptionDto,
+  ) {
+    return this.subscriptions.adminUpdateSubscription(user, id, dto);
+  }
+
+  /** Admin-only: permanently remove a subscription. */
+  @Delete('subscriptions/:id')
+  adminRemoveSubscription(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.subscriptions.adminRemoveSubscription(user, id);
   }
 
   @Patch('subscriptions/:id/cancel')
@@ -73,6 +112,12 @@ export class SubscriptionsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.subscriptions.listPayments(user, id);
+  }
+
+  /** Admin-only: all subscription payments across every account. */
+  @Get('subscription-payments')
+  listAllPayments(@CurrentUser() user: AuthJwtPayload) {
+    return this.subscriptions.listAllPayments(user);
   }
 
   @Post('subscriptions/:id/payments')

@@ -66,6 +66,12 @@ export class PaymentsService {
     if (user.role === UserRole.TENANT) {
       return this.scopedToTenant(user.id).getMany();
     }
+    // Vendors are service providers, not payers — they have no payment
+    // records in this model, so return an empty list rather than 403 so the
+    // mobile Payments tab renders a clean empty state.
+    if (user.role === UserRole.VENDOR) {
+      return [];
+    }
     throw new ForbiddenException('Not allowed to view payments');
   }
 
@@ -103,6 +109,22 @@ export class PaymentsService {
     if (dto.status === PaymentStatus.SUCCEEDED) {
       payment.paidAt = new Date();
     }
+    return this.payments.save(payment);
+  }
+
+  /** Attach a proof-of-payment document. The tenant who owns the payment and
+   * any management role (back-office / owner) may upload. */
+  async uploadProof(
+    user: AuthJwtPayload,
+    id: string,
+    file?: Express.Multer.File,
+  ): Promise<Payment> {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const payment = await this.payments.findOne({ where: { id } });
+    if (!payment || !(await this.canView(user, payment))) {
+      throw new NotFoundException('Payment not found');
+    }
+    payment.proofUrl = `/uploads/payment-proofs/${file.filename}`;
     return this.payments.save(payment);
   }
 

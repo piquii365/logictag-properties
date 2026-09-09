@@ -1,6 +1,6 @@
 // Thin, typed wrappers around the real server endpoints. One file, since
 // each function is a one-liner — split it up if a domain outgrows this.
-import { api } from "@/lib/api";
+import { api, BASE_URL } from "@/lib/api";
 import type {
   Lease,
   MaintenanceRequest,
@@ -13,6 +13,7 @@ import type {
   Tenant,
   Unit,
   Utility,
+  UtilityCharge,
   Vendor,
   Notification,
   FinancialSummary,
@@ -22,6 +23,13 @@ import type {
   Subscription,
   SubscriptionPlan,
   SubscriptionPayment,
+  AdminUser,
+  UserListResponse,
+  UserListFilters,
+  SubscriptionPaymentWithRelations,
+  AuditLogListResponse,
+  SystemOverview,
+  TaxReturn,
 } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth";
 
@@ -156,6 +164,19 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
     body: { currentPassword, newPassword },
   });
 
+export const requestEmailChange = (newEmail: string) =>
+  api<{ message: string }>("/auth/email/request-change", {
+    method: "POST",
+    body: { newEmail },
+  });
+
+export const confirmEmailChange = (token: string) =>
+  api<{ message: string; email: string }>("/auth/email/confirm-change", {
+    method: "POST",
+    skipAuth: true,
+    body: { token },
+  });
+
 // ── Tenants ───────────────────────────────────────────────────────
 
 export const getTenants = () => api<Tenant[]>("/tenants");
@@ -226,6 +247,61 @@ export const markSubscriptionPaymentFailed = (paymentId: string) =>
   api<SubscriptionPayment>(`/subscription-payments/${paymentId}/fail`, {
     method: "PATCH",
   });
+
+// ── Admin: plans & subscriptions CRUD ──────────────────────────
+
+export type SubscriptionPlanInput = {
+  code: string;
+  name: string;
+  description?: string;
+  amountMinor: string;
+  pricePerUnitMinor?: string;
+  minimumUnits?: number;
+  maximumUnits?: number;
+  customPricing?: boolean;
+  isActive?: boolean;
+  currency?: string;
+  billingInterval: "monthly" | "yearly";
+  trialDays?: number;
+  features?: Record<string, unknown>;
+  notificationSettings?: Record<string, unknown>;
+};
+
+export const createSubscriptionPlan = (dto: SubscriptionPlanInput) =>
+  api<SubscriptionPlan>("/subscription-plans", { method: "POST", body: dto });
+export const updateSubscriptionPlan = (
+  id: string,
+  dto: Partial<SubscriptionPlanInput>,
+) =>
+  api<SubscriptionPlan>(`/subscription-plans/${id}`, {
+    method: "PATCH",
+    body: dto,
+  });
+export const deleteSubscriptionPlan = (id: string) =>
+  api<{ id: string }>(`/subscription-plans/${id}`, { method: "DELETE" });
+
+export type AdminSubscriptionInput = {
+  userId: string;
+  planId: string;
+  status?: Subscription["status"];
+  startedAt?: string;
+  trialEndsAt?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  managedUnits?: number;
+  agreedPricePerUnitMinor?: string;
+  provider?: "pesepay";
+};
+
+export const adminCreateSubscription = (dto: AdminSubscriptionInput) =>
+  api<Subscription>("/subscriptions/admin", { method: "POST", body: dto });
+export const adminUpdateSubscription = (
+  id: string,
+  dto: Partial<AdminSubscriptionInput>,
+) =>
+  api<Subscription>(`/subscriptions/${id}`, { method: "PATCH", body: dto });
+export const adminDeleteSubscription = (id: string) =>
+  api<{ id: string }>(`/subscriptions/${id}`, { method: "DELETE" });
 
 // ── Notifications & intelligence ───────────────────────────────
 
@@ -326,3 +402,82 @@ export async function allocatePaymentToLease(
     remaining -= portion;
   }
 }
+
+// ── Proof-of-payment upload ──────────────────────────────────────
+
+/** Attach a proof-of-payment document (photo/PDF) to a payment. */
+export function uploadPaymentProof(
+  paymentId: string,
+  file: { uri: string; name: string; type: string },
+) {
+  const form = new FormData();
+  form.append("file", file as unknown as Blob);
+  return api<Payment>(`/payments/${paymentId}/proof`, {
+    method: "POST",
+    body: form,
+  });
+}
+
+// ── Compliance documents & tax returns ───────────────────────────
+
+/** Upload a ZIMRA / compliance document to a profile. */
+export function uploadComplianceDocument(
+  profileId: string,
+  file: { uri: string; name: string; type: string },
+) {
+  const form = new FormData();
+  form.append("file", file as unknown as Blob);
+  return api<ComplianceProfile>(
+    `/compliance/zimra/profiles/${profileId}/documents`,
+    { method: "POST", body: form },
+  );
+}
+
+/** Remove a previously uploaded compliance document. */
+export const removeComplianceDocument = (
+  profileId: string,
+  documentId: string,
+) =>
+  api<ComplianceProfile>(
+    `/compliance/zimra/profiles/${profileId}/documents/${documentId}`,
+    { method: "DELETE" },
+  );
+
+export const getTaxReturns = (profileId?: string) =>
+  api<TaxReturn[]>("/compliance/tax-returns", {
+    params: profileId ? { profileId } : undefined,
+  });
+
+/** Absolute URL of a tax return's PDF report (open in a browser / share). */
+export const taxReturnPdfUrl = (id: string) =>
+  `${BASE_URL}/compliance/tax-returns/${id}.pdf`;
+
+// ── Admin console ────────────────────────────────────────────────
+
+export const getUsers = (filters: UserListFilters = {}) =>
+  api<UserListResponse>("/users", { params: filters });
+
+export const setUserRole = (userId: string, role: string) =>
+  api<AdminUser>(`/users/${userId}/role`, {
+    method: "PATCH",
+    body: { role },
+  });
+
+export const setUserStatus = (userId: string, status: string) =>
+  api<AdminUser>(`/users/${userId}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+
+export const getAllSubscriptionPayments = () =>
+  api<SubscriptionPaymentWithRelations[]>("/subscription-payments");
+
+export const getAuditLogs = (filters: {
+  userId?: string;
+  action?: string;
+  entityType?: string;
+  page?: number;
+  limit?: number;
+} = {}) => api<AuditLogListResponse>("/audit-logs", { params: filters });
+
+export const getSystemOverview = () => api<SystemOverview>("/system/overview");

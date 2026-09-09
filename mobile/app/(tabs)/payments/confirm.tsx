@@ -3,7 +3,12 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { Btn, Card, Divider, Header, KV, Screen } from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
-import { allocatePaymentToLease, createPayment, updatePaymentStatus } from "@/lib/queries";
+import {
+  allocatePaymentToLease,
+  createPayment,
+  updatePaymentStatus,
+  uploadPaymentProof,
+} from "@/lib/queries";
 
 const METHOD_LABEL: Record<string, string> = {
   cash: "Cash",
@@ -20,6 +25,9 @@ export default function ConfirmPayment() {
     amount?: string;
     method?: string;
     reference?: string;
+    proofUri?: string;
+    proofName?: string;
+    proofType?: string;
   }>();
 
   const [submitting, setSubmitting] = useState(false);
@@ -45,12 +53,22 @@ export default function ConfirmPayment() {
       if (p.leaseId) {
         await allocatePaymentToLease(confirmed.id, p.leaseId, amountMinor);
       }
+      if (p.proofUri) {
+        await uploadPaymentProof(confirmed.id, {
+          uri: p.proofUri,
+          name: p.proofName || `proof-${Date.now()}.jpg`,
+          type: p.proofType || "image/jpeg",
+        });
+      }
       router.replace({
         pathname: "/(tabs)/payments/success",
         params: {
+          paymentId: confirmed.id,
           amount: p.amount,
           reference: confirmed.merchantReference,
-          date: new Date(confirmed.paidAt ?? confirmed.createdAt).toLocaleString(),
+          date: new Date(
+            confirmed.paidAt ?? confirmed.createdAt,
+          ).toLocaleString(),
           tenantName: p.tenantName ?? "",
         },
       });
@@ -65,22 +83,41 @@ export default function ConfirmPayment() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="Confirm Payment" />
       <Screen>
-        <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">Review payment details</Text>
+        <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
+          Review payment details
+        </Text>
 
         <Card>
           <KV k="Tenant" v={p.tenantName ?? "—"} />
           <Divider />
           <KV k="Amount" v={`$${p.amount ?? "0.00"} USD`} />
           <Divider />
-          <KV k="Payment Method" v={METHOD_LABEL[p.method ?? ""] ?? p.method ?? "—"} />
+          <KV
+            k="Payment Method"
+            v={METHOD_LABEL[p.method ?? ""] ?? p.method ?? "—"}
+          />
           <Divider />
           <KV k="Reference" v={p.reference || "—"} />
+          {p.proofUri ? (
+            <>
+              <Divider />
+              <KV k="Proof of payment" v="Attached" />
+            </>
+          ) : null}
         </Card>
 
-        {error ? <Text className="text-[13px] text-[#DC2626] mt-4">{error}</Text> : null}
+        {error ? (
+          <Text className="text-[13px] text-[#DC2626] mt-4">{error}</Text>
+        ) : null}
 
         <View className="flex-row gap-3 mt-6">
-          <Btn label="Cancel" variant="outline" className="flex-1" onPress={() => router.back()} disabled={submitting} />
+          <Btn
+            label="Cancel"
+            variant="outline"
+            className="flex-1"
+            onPress={() => router.back()}
+            disabled={submitting}
+          />
           <Btn
             label={submitting ? "Confirming..." : "Confirm Payment"}
             className="flex-1"

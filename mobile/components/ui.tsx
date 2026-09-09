@@ -448,11 +448,22 @@ export function Avatar({
   initials,
   size = 44,
   tint = C.navy,
+  uri,
 }: {
   initials: string;
   size?: number;
   tint?: string;
+  /** Optional image source. When provided, the image is shown instead of initials. */
+  uri?: string;
 }) {
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        style={{ height: size, width: size, borderRadius: size / 2 }}
+      />
+    );
+  }
   return (
     <View
       style={{

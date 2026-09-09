@@ -9,11 +9,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PaymentsService } from './payments.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
+import { proofMulterOptions } from '../common/multer/multer.config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { CreatePaymentAllocationDto } from './dto/create-payment-allocation.dto';
@@ -70,6 +74,18 @@ export class PaymentsController {
     @Body() dto: UpdatePaymentStatusDto,
   ) {
     return this.payments.updateStatus(user, id, dto);
+  }
+
+  @Post('payments/:id/proof')
+  @UseInterceptors(
+    FileInterceptor('file', proofMulterOptions('payment-proofs')),
+  )
+  uploadProof(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.payments.uploadProof(user, id, file);
   }
 
   @Post('payments/:id/pesepay/initiate')

@@ -9,8 +9,9 @@ import {
   Screen,
   SectionTitle,
 } from "@/components/ui";
+import { BASE_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { roleLabel } from "@/lib/roles";
+import { isManagementRole, roleLabel } from "@/lib/roles";
 
 function initialsOf(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -22,7 +23,8 @@ function initialsOf(name: string) {
 
 export default function More() {
   const { user, signOut } = useAuth();
-  const isVendor = user?.role === "vendor";
+  const isManagement = isManagementRole(user?.role);
+  const isAdmin = user?.role === "admin";
 
   async function handleSignOut() {
     await signOut();
@@ -39,6 +41,7 @@ export default function More() {
           <Avatar
             initials={user ? initialsOf(user.name).toUpperCase() : "?"}
             size={52}
+            uri={user?.avatarUrl ? `${BASE_URL}${user.avatarUrl}` : undefined}
           />
           <View className="ml-3 flex-1">
             <Text className="text-[16px] font-semibold text-[#0F2C4A]">
@@ -53,58 +56,74 @@ export default function More() {
           </View>
         </Card>
 
-        <SectionTitle>Management</SectionTitle>
-        <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
-          <Row
-            icon="people-outline"
-            title="Tenants"
-            onPress={() => router.push("/(tabs)/tenants")}
-          />
-          <Divider />
-          <Row
-            icon="briefcase-outline"
-            title="Vendors"
-            onPress={() => router.push("/(tabs)/vendors")}
-          />
-          <Divider />
-          <Row
-            icon="document-text-outline"
-            title="Leases"
-            onPress={() => router.push("/(tabs)/leases")}
-          />
-          <Divider />
-          <Row
-            icon="flash-outline"
-            title="Utilities"
-            onPress={() => router.push("/(tabs)/utilities")}
-          />
-          <Divider />
-          <Row
-            icon="bar-chart-outline"
-            title="Reports"
-            onPress={() => router.push("/(tabs)/reports")}
-          />
-          <Divider />
-          <Row
-            icon="card-outline"
-            title="Subscription"
-            onPress={() => router.push("/(tabs)/subscriptions")}
-          />
-          <Divider />
-          <Row
-            icon="sparkles-outline"
-            title="Insights"
-            onPress={() => router.push("/(tabs)/insights")}
-          />
-          <Divider />
-          {!isVendor ? (
-            <Row
-              icon="shield-checkmark-outline"
-              title="Compliance"
-              onPress={() => router.push("/(tabs)/compliance")}
-            />
-          ) : null}
-        </View>
+        {isManagement ? (
+          <>
+            <SectionTitle>Management</SectionTitle>
+            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+              <Row
+                icon="people-outline"
+                title="Tenants"
+                onPress={() => router.push("/(tabs)/tenants")}
+              />
+              <Divider />
+              <Row
+                icon="briefcase-outline"
+                title="Vendors"
+                onPress={() => router.push("/(tabs)/vendors")}
+              />
+              <Divider />
+              <Row
+                icon="document-text-outline"
+                title="Leases"
+                onPress={() => router.push("/(tabs)/leases")}
+              />
+              <Divider />
+              <Row
+                icon="flash-outline"
+                title="Utilities"
+                onPress={() => router.push("/(tabs)/utilities")}
+              />
+              <Divider />
+              <Row
+                icon="bar-chart-outline"
+                title="Reports"
+                onPress={() => router.push("/(tabs)/reports")}
+              />
+              <Divider />
+              <Row
+                icon="card-outline"
+                title="Subscription"
+                onPress={() => router.push("/(tabs)/subscriptions")}
+              />
+              <Divider />
+              <Row
+                icon="sparkles-outline"
+                title="Insights"
+                onPress={() => router.push("/(tabs)/insights")}
+              />
+              <Divider />
+              <Row
+                icon="shield-checkmark-outline"
+                title="Compliance"
+                onPress={() => router.push("/(tabs)/compliance")}
+              />
+            </View>
+          </>
+        ) : null}
+
+        {isAdmin ? (
+          <>
+            <SectionTitle>Admin</SectionTitle>
+            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+              <Row
+                icon="settings-outline"
+                title="Admin Console"
+                sub="Users, subscriptions, payments, audit & system"
+                onPress={() => router.push("/(tabs)/admin")}
+              />
+            </View>
+          </>
+        ) : null}
 
         <SectionTitle>Account</SectionTitle>
         <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
