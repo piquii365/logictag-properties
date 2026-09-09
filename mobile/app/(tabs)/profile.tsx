@@ -1,7 +1,16 @@
 import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, Image, Pressable, Text, View } from "react-native";
-import { Avatar, Btn, Card, Field, Header, Screen } from "@/components/ui";
+import {
+  Avatar,
+  Btn,
+  Divider,
+  Field,
+  Group,
+  Header,
+  Screen,
+} from "@/components/ui";
 import { apiErrorMessage, BASE_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
@@ -156,7 +165,7 @@ export default function Profile() {
               />
             )}
             <View className="absolute -right-1 -bottom-1 h-7 w-7 rounded-full bg-[#F96B1F] items-center justify-center border-2 border-[#F4F6F9]">
-              <Text className="text-white text-[13px]">✎</Text>
+              <Ionicons name="pencil" size={13} color="#FFFFFF" />
             </View>
           </Pressable>
           <Text className="text-[12px] text-[#6B7280] mt-2">
@@ -164,110 +173,116 @@ export default function Profile() {
           </Text>
         </View>
 
-        <Card className="mb-4">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="text-[12px] text-[#6B7280]">Email</Text>
-              <Text className="text-[14px] text-[#0F2C4A] font-medium mt-0.5">
-                {user.email}
-              </Text>
+        <Group className="mb-4">
+          <View className="px-4 py-3">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-[12px] text-[#6B7280]">Email</Text>
+                <Text className="text-[14px] text-[#0F2C4A] font-medium mt-0.5">
+                  {user.email}
+                </Text>
+              </View>
+              {!editingEmail ? (
+                <Btn
+                  label="Change"
+                  variant="ghost"
+                  className="py-1 px-2"
+                  onPress={() => {
+                    setEditingEmail(true);
+                    setEmailError(null);
+                  }}
+                />
+              ) : null}
             </View>
-            {!editingEmail ? (
-              <Btn
-                label="Change"
-                variant="ghost"
-                className="py-1 px-2"
-                onPress={() => {
-                  setEditingEmail(true);
-                  setEmailError(null);
-                }}
-              />
+
+            {editingEmail ? (
+              <View className="mt-3 border-t border-[#E5E9F0] pt-3">
+                {!awaitingCode ? (
+                  <>
+                    <Field
+                      label="New email"
+                      value={newEmail}
+                      onChangeText={setNewEmail}
+                      placeholder="you@example.com"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      autoCorrect={false}
+                    />
+                    <Text className="text-[12px] text-[#6B7280] -mt-2 mb-3 leading-4">
+                      We'll send a confirmation code to the new address. Your
+                      email only changes once you confirm it.
+                    </Text>
+                    {emailError ? (
+                      <Text className="text-[13px] text-[#DC2626] mb-3">
+                        {emailError}
+                      </Text>
+                    ) : null}
+                    <View className="flex-row gap-2">
+                      <View className="flex-1">
+                        <Btn
+                          label={emailBusy ? "Sending..." : "Send code"}
+                          disabled={emailBusy}
+                          onPress={handleRequestEmailChange}
+                        />
+                      </View>
+                      <Btn
+                        label="Cancel"
+                        variant="outline"
+                        onPress={cancelEmailChange}
+                      />
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-[13px] text-[#0F2C4A] font-medium mb-1">
+                      Enter the confirmation code
+                    </Text>
+                    <Text className="text-[12px] text-[#6B7280] mb-3 leading-4">
+                      We sent a code to {newEmail.trim() || "your new email"}.
+                      Paste it below to finish the change.
+                    </Text>
+                    <Field
+                      label="Confirmation code"
+                      value={code}
+                      onChangeText={setCode}
+                      placeholder="Paste the code from your email"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    {emailError ? (
+                      <Text className="text-[13px] text-[#DC2626] mb-3">
+                        {emailError}
+                      </Text>
+                    ) : null}
+                    <View className="flex-row gap-2">
+                      <View className="flex-1">
+                        <Btn
+                          label={emailBusy ? "Confirming..." : "Confirm email"}
+                          disabled={emailBusy}
+                          onPress={handleConfirmEmailChange}
+                        />
+                      </View>
+                      <Btn
+                        label="Cancel"
+                        variant="outline"
+                        onPress={cancelEmailChange}
+                      />
+                    </View>
+                  </>
+                )}
+              </View>
             ) : null}
           </View>
 
-          {editingEmail ? (
-            <View className="mt-3 border-t border-[#E5E9F0] pt-3">
-              {!awaitingCode ? (
-                <>
-                  <Field
-                    label="New email"
-                    value={newEmail}
-                    onChangeText={setNewEmail}
-                    placeholder="you@example.com"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    autoCorrect={false}
-                  />
-                  <Text className="text-[12px] text-[#6B7280] -mt-2 mb-3 leading-4">
-                    We'll send a confirmation code to the new address. Your
-                    email only changes once you confirm it.
-                  </Text>
-                  {emailError ? (
-                    <Text className="text-[13px] text-[#DC2626] mb-3">
-                      {emailError}
-                    </Text>
-                  ) : null}
-                  <View className="flex-row gap-2">
-                    <View className="flex-1">
-                      <Btn
-                        label={emailBusy ? "Sending..." : "Send code"}
-                        disabled={emailBusy}
-                        onPress={handleRequestEmailChange}
-                      />
-                    </View>
-                    <Btn
-                      label="Cancel"
-                      variant="outline"
-                      onPress={cancelEmailChange}
-                    />
-                  </View>
-                </>
-              ) : (
-                <>
-                  <Text className="text-[13px] text-[#0F2C4A] font-medium mb-1">
-                    Enter the confirmation code
-                  </Text>
-                  <Text className="text-[12px] text-[#6B7280] mb-3 leading-4">
-                    We sent a code to {newEmail.trim() || "your new email"}.
-                    Paste it below to finish the change.
-                  </Text>
-                  <Field
-                    label="Confirmation code"
-                    value={code}
-                    onChangeText={setCode}
-                    placeholder="Paste the code from your email"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  {emailError ? (
-                    <Text className="text-[13px] text-[#DC2626] mb-3">
-                      {emailError}
-                    </Text>
-                  ) : null}
-                  <View className="flex-row gap-2">
-                    <View className="flex-1">
-                      <Btn
-                        label={emailBusy ? "Confirming..." : "Confirm email"}
-                        disabled={emailBusy}
-                        onPress={handleConfirmEmailChange}
-                      />
-                    </View>
-                    <Btn
-                      label="Cancel"
-                      variant="outline"
-                      onPress={cancelEmailChange}
-                    />
-                  </View>
-                </>
-              )}
-            </View>
-          ) : null}
+          <Divider />
 
-          <Text className="text-[12px] text-[#6B7280] mt-3">Role</Text>
-          <Text className="text-[14px] text-[#0F2C4A] font-medium mt-0.5">
-            {roleLabel(user.role)}
-          </Text>
-        </Card>
+          <View className="px-4 py-3">
+            <Text className="text-[12px] text-[#6B7280]">Role</Text>
+            <Text className="text-[14px] text-[#0F2C4A] font-medium mt-0.5">
+              {roleLabel(user.role)}
+            </Text>
+          </View>
+        </Group>
 
         <Field
           label="Full name"

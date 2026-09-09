@@ -1,6 +1,14 @@
 import { useMemo } from "react";
 import { Text, View } from "react-native";
-import { Card, ErrorView, Header, LoadingView, Screen } from "@/components/ui";
+import {
+  Divider,
+  ErrorView,
+  Group,
+  Header,
+  LoadingView,
+  Screen,
+  SectionTitle,
+} from "@/components/ui";
 import { centsToDollars, money } from "@/lib/data";
 import { getMaintenanceRequests, getMyUnits, getProperties, getRentCharges, getVendors } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
@@ -18,15 +26,6 @@ const STATUS_LABEL: Record<MaintenanceStatus, string> = {
   closed: "Closed",
   cancelled: "Cancelled",
 };
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <Card className="flex-1">
-      <Text className="text-[22px] font-bold text-[#0F2C4A]">{value}</Text>
-      <Text className="text-[12px] text-[#6B7280] mt-0.5">{label}</Text>
-    </Card>
-  );
-}
 
 export default function Reports() {
   const properties = useFetch(getProperties);
@@ -77,56 +76,106 @@ export default function Reports() {
           />
         ) : (
           <>
-            <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">Portfolio</Text>
-            <View className="flex-row gap-3 mb-3">
-              <Stat value={String((properties.data ?? []).length)} label="Properties" />
-              <Stat value={String((units.data ?? []).length)} label="Units" />
-            </View>
-            <View className="flex-row gap-3">
-              <Stat value={String(occupied)} label="Occupied" />
-              <Stat value={String(vacant)} label="Vacant" />
-            </View>
-
-            <Text className="text-[15px] font-semibold text-[#0F2C4A] mt-6 mb-3">Rent Collection</Text>
-            <Card>
+            <SectionTitle>Portfolio</SectionTitle>
+            <View className="border border-[#E5E9F0] rounded-lg bg-white">
               <View className="flex-row">
-                <View className="flex-1">
-                  <Text className="text-[12px] text-[#6B7280] mb-1">Collected</Text>
-                  <Text className="text-[20px] font-bold text-[#16A34A]">{money(collected)}</Text>
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[22px] font-bold text-[#0F2C4A]">
+                    {(properties.data ?? []).length}
+                  </Text>
+                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                    Properties
+                  </Text>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-[12px] text-[#6B7280] mb-1">Outstanding</Text>
-                  <Text className="text-[20px] font-bold text-[#DC2626]">{money(outstanding)}</Text>
+                <View className="w-px bg-[#E5E9F0]" />
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[22px] font-bold text-[#0F2C4A]">
+                    {(units.data ?? []).length}
+                  </Text>
+                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                    Units
+                  </Text>
                 </View>
               </View>
-            </Card>
+              <View className="h-px bg-[#E5E9F0]" />
+              <View className="flex-row">
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[22px] font-bold text-[#16A34A]">
+                    {occupied}
+                  </Text>
+                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                    Occupied
+                  </Text>
+                </View>
+                <View className="w-px bg-[#E5E9F0]" />
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[22px] font-bold text-[#6B7280]">
+                    {vacant}
+                  </Text>
+                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                    Vacant
+                  </Text>
+                </View>
+              </View>
+            </View>
 
-            <Text className="text-[15px] font-semibold text-[#0F2C4A] mt-6 mb-3">
-              Maintenance by Status
-            </Text>
-            <Card>
-              {requestsByStatus.size === 0 ? (
-                <Text className="text-[13px] text-[#6B7280]">No maintenance requests yet.</Text>
-              ) : (
-                [...requestsByStatus.entries()].map(([status, count], i) => (
-                  <View
-                    key={status}
-                    className={`flex-row items-center justify-between py-2 ${i ? "border-t border-[#F1F5F9]" : ""}`}
-                  >
-                    <Text className="text-[13px] text-[#6B7280]">{STATUS_LABEL[status]}</Text>
-                    <Text className="text-[14px] font-semibold text-[#0F2C4A]">{count}</Text>
+            <SectionTitle>Rent Collection</SectionTitle>
+            <View className="border border-[#E5E9F0] rounded-lg bg-white">
+              <View className="flex-row">
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[12px] text-[#6B7280] mb-1">
+                    Collected
+                  </Text>
+                  <Text className="text-[20px] font-bold text-[#16A34A]">
+                    {money(collected)}
+                  </Text>
+                </View>
+                <View className="w-px bg-[#E5E9F0]" />
+                <View className="flex-1 px-4 py-4">
+                  <Text className="text-[12px] text-[#6B7280] mb-1">
+                    Outstanding
+                  </Text>
+                  <Text className="text-[20px] font-bold text-[#DC2626]">
+                    {money(outstanding)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <SectionTitle>Maintenance by Status</SectionTitle>
+            {requestsByStatus.size === 0 ? (
+              <Text className="text-[13px] text-[#6B7280]">
+                No maintenance requests yet.
+              </Text>
+            ) : (
+              <Group>
+                {[...requestsByStatus.entries()].map(([status, count], i) => (
+                  <View key={status}>
+                    {i > 0 ? <Divider /> : null}
+                    <View className="flex-row items-center justify-between px-4 py-2.5">
+                      <Text className="text-[13px] text-[#6B7280]">
+                        {STATUS_LABEL[status]}
+                      </Text>
+                      <Text className="text-[14px] font-semibold text-[#0F2C4A]">
+                        {count}
+                      </Text>
+                    </View>
                   </View>
-                ))
-              )}
-            </Card>
+                ))}
+              </Group>
+            )}
 
-            <Text className="text-[15px] font-semibold text-[#0F2C4A] mt-6 mb-3">Vendors</Text>
-            <Card>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-[13px] text-[#6B7280]">Approved vendors</Text>
-                <Text className="text-[14px] font-semibold text-[#0F2C4A]">{approvedVendors}</Text>
+            <SectionTitle>Vendors</SectionTitle>
+            <Group>
+              <View className="flex-row items-center justify-between px-4 py-3">
+                <Text className="text-[13px] text-[#6B7280]">
+                  Approved vendors
+                </Text>
+                <Text className="text-[14px] font-semibold text-[#0F2C4A]">
+                  {approvedVendors}
+                </Text>
               </View>
-            </Card>
+            </Group>
           </>
         )}
       </Screen>

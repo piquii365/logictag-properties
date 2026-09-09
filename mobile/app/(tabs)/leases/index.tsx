@@ -1,7 +1,15 @@
 import { router } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
-import { ErrorView, Header, LoadingView, Screen, StatusText } from "@/components/ui";
+import {
+  Divider,
+  ErrorView,
+  Group,
+  Header,
+  LoadingView,
+  Screen,
+  StatusText,
+} from "@/components/ui";
 import { getLeases, getMyUnits } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 import type { LeaseStatus } from "@/lib/types";
@@ -29,40 +37,57 @@ export default function Leases() {
         {loading ? (
           <LoadingView />
         ) : error ? (
-          <ErrorView message={error} onRetry={() => { leases.refetch(); units.refetch(); }} />
+          <ErrorView
+            message={error}
+            onRetry={() => {
+              leases.refetch();
+              units.refetch();
+            }}
+          />
         ) : list.length === 0 ? (
-          <Text className="text-center text-[13px] text-[#6B7280] mt-10">No leases yet.</Text>
+          <Text className="text-center text-[13px] text-[#6B7280] mt-10">
+            No leases yet.
+          </Text>
         ) : (
-          <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden bg-white">
+          <Group>
             {list.map((l, i) => {
               const unit = unitsById.get(l.unitId);
               return (
-                <Pressable
-                  key={l.id}
-                  onPress={() =>
-                    router.push({ pathname: "/(tabs)/tenants/[id]", params: { id: l.unitId } })
-                  }
-                  className={`px-4 py-3.5 transition-transform duration-100 ease-out active:scale-[0.98] active:bg-[#F8FAFC] ${
-                    i ? "border-t border-[#E5E9F0]" : ""
-                  }`}
-                >
-                  <View className="flex-row items-start justify-between">
-                    <Text className="text-[14px] font-semibold text-[#0F2C4A] flex-1 pr-3">
-                      {l.reference}
+                <View key={l.id}>
+                  {i > 0 ? <Divider /> : null}
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/tenants/[id]",
+                        params: { id: l.unitId },
+                      })
+                    }
+                    className="px-4 py-3.5 active:bg-[#F4F6F9]"
+                  >
+                    <View className="flex-row items-start justify-between">
+                      <Text className="text-[14px] font-semibold text-[#0F2C4A] flex-1 pr-3">
+                        {l.reference}
+                      </Text>
+                      <StatusText
+                        text={l.status}
+                        tone={STATUS_TONE[l.status]}
+                      />
+                    </View>
+                    <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                      {unit
+                        ? `${unit.label} · ${unit.property?.name ?? ""}`
+                        : "—"}
                     </Text>
-                    <StatusText text={l.status} tone={STATUS_TONE[l.status]} />
-                  </View>
-                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                    {unit ? `${unit.label} · ${unit.property?.name ?? ""}` : "—"}
-                  </Text>
-                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                    {l.startDate} - {l.endDate ?? "ongoing"} · ${(Number(l.rentAmountMinor) / 100).toFixed(2)}/
-                    {l.currency}
-                  </Text>
-                </Pressable>
+                    <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                      {l.startDate} - {l.endDate ?? "ongoing"} · $
+                      {(Number(l.rentAmountMinor) / 100).toFixed(2)}/
+                      {l.currency}
+                    </Text>
+                  </Pressable>
+                </View>
               );
             })}
-          </View>
+          </Group>
         )}
       </Screen>
     </View>

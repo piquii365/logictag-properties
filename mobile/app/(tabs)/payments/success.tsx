@@ -3,7 +3,15 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Btn, Card, Header, KV, Screen, StatusIcon } from "@/components/ui";
+import {
+  Btn,
+  Divider,
+  Group,
+  Header,
+  KV,
+  Screen,
+  StatusIcon,
+} from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
 import { uploadPaymentProof } from "@/lib/queries";
 
@@ -51,9 +59,9 @@ export default function PaymentRecorded() {
   }
 
   return (
-    <View className="flex-1 bg-[#F0FDF4]">
+    <View className="flex-1 bg-[#F4F6F9]">
       <Header title="" back={false} />
-      <Screen bg="#F0FDF4">
+      <Screen>
         <View className="mt-6 mb-6">
           <StatusIcon icon="checkmark" />
         </View>
@@ -74,10 +82,15 @@ export default function PaymentRecorded() {
           <View className="mb-8" />
         )}
 
-        <Card>
-          <KV k="Reference" v={reference ?? "—"} />
-          <KV k="Date" v={date ?? "—"} />
-        </Card>
+        <Group>
+          <View className="px-4">
+            <KV k="Reference" v={reference ?? "—"} />
+          </View>
+          <Divider />
+          <View className="px-4">
+            <KV k="Date" v={date ?? "—"} />
+          </View>
+        </Group>
 
         {paymentId ? (
           <View className="mt-5">
@@ -87,9 +100,9 @@ export default function PaymentRecorded() {
               </Text>
             ) : null}
             {uploaded ? (
-              <View className="flex-row items-center justify-center rounded-xl bg-[#DCFCE7] border border-[#BBF7D0] px-4 py-3">
+              <View className="flex-row items-center justify-center rounded-lg border border-[#E5E9F0] px-4 py-3">
                 <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                <Text className="text-[14px] font-medium text-[#15803D] ml-2">
+                <Text className="text-[14px] font-medium text-[#16A34A] ml-2">
                   Proof of payment uploaded
                 </Text>
               </View>

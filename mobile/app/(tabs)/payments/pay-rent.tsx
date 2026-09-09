@@ -4,9 +4,9 @@ import { Text, View } from "react-native";
 import {
   Badge,
   Btn,
-  Card,
   Divider,
   ErrorView,
+  Group,
   Header,
   KV,
   LoadingView,
@@ -107,23 +107,18 @@ export default function PayRent() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="Pay Rent" />
       <Screen>
-        <Card>
-          <Text className="text-[15px] font-semibold text-[#0F2C4A]">
-            Lease {lease.reference}
-          </Text>
-          <Text className="text-[12px] text-[#6B7280] mt-0.5">
-            {tenant.firstName} {tenant.lastName}
-          </Text>
-        </Card>
+        <Text className="text-[13px] text-[#6B7280]">
+          {tenant.firstName} {tenant.lastName} · Lease {lease.reference}
+        </Text>
 
-        <Card className="mt-3">
+        <View className="mt-4 border-t border-b border-[#E5E9F0] py-5">
           <View className="flex-row items-start justify-between">
             <View>
               <Text className="text-[12px] text-[#6B7280] mb-1">
-                Current Balance
+                Current balance
               </Text>
               <Text
-                className="text-[28px] font-bold"
+                className="text-[30px] font-bold"
                 style={{ color: total ? "#DC2626" : "#16A34A" }}
               >
                 {money(total)}
@@ -132,63 +127,67 @@ export default function PayRent() {
             {total ? <Badge text="Overdue" tone="red" /> : null}
           </View>
           {outstandingCharges[0] ? (
-            <>
-              <Divider />
-              <KV k="Next Due Date" v={outstandingCharges[0].dueDate} />
-            </>
-          ) : null}
-        </Card>
-
-        {outstandingCharges.length > 0 ? (
-          <Card className="mt-3">
-            <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-1">
-              Outstanding Charges
-            </Text>
-            {outstandingCharges.map((c) => (
-              <KV
-                key={c.id}
-                k={`Rent — ${c.periodStart} to ${c.periodEnd}`}
-                v={money(
-                  centsToDollars(
-                    Number(c.amountMinor) - Number(c.allocatedMinor),
-                  ),
-                )}
-              />
-            ))}
-            {outstandingUtilityCharges
-              .filter(
-                (charge) =>
-                  charge.leaseId === lease.id &&
-                  OUTSTANDING_STATUSES.has(charge.status),
-              )
-              .map((charge) => (
-                <KV
-                  key={charge.id}
-                  k="Utility charge"
-                  v={money(
-                    centsToDollars(
-                      Number(charge.amountMinor) -
-                        Number(charge.allocatedMinor),
-                    ),
-                  )}
-                />
-              ))}
-            <Divider />
-            <View className="flex-row items-center justify-between pt-3">
+            <View className="flex-row items-center justify-between mt-4 pt-3 border-t border-[#E5E9F0]">
+              <Text className="text-[13px] text-[#6B7280]">Next due date</Text>
               <Text className="text-[14px] font-semibold text-[#0F2C4A]">
-                Total
-              </Text>
-              <Text className="text-[16px] font-bold text-[#0F2C4A]">
-                {money(total)}
+                {outstandingCharges[0].dueDate}
               </Text>
             </View>
-          </Card>
-        ) : (
-          <Card className="mt-3">
-            <Text className="text-[14px] text-[#6B7280]">
-              You&apos;re all caught up — nothing due.
+          ) : null}
+        </View>
+
+        {outstandingCharges.length > 0 ? (
+          <>
+            <Text className="text-[15px] font-semibold text-[#0F2C4A] mt-5 mb-1">
+              Outstanding charges
             </Text>
-          </Card>
+            <Group>
+              <View className="px-4">
+                {outstandingCharges.map((c) => (
+                  <KV
+                    key={c.id}
+                    k={`Rent — ${c.periodStart} to ${c.periodEnd}`}
+                    v={money(
+                      centsToDollars(
+                        Number(c.amountMinor) - Number(c.allocatedMinor),
+                      ),
+                    )}
+                  />
+                ))}
+                {outstandingUtilityCharges
+                  .filter(
+                    (charge) =>
+                      charge.leaseId === lease.id &&
+                      OUTSTANDING_STATUSES.has(charge.status),
+                  )
+                  .map((charge) => (
+                    <KV
+                      key={charge.id}
+                      k="Utility charge"
+                      v={money(
+                        centsToDollars(
+                          Number(charge.amountMinor) -
+                            Number(charge.allocatedMinor),
+                        ),
+                      )}
+                    />
+                  ))}
+              </View>
+              <Divider />
+              <View className="flex-row items-center justify-between px-4 py-3">
+                <Text className="text-[14px] font-semibold text-[#0F2C4A]">
+                  Total
+                </Text>
+                <Text className="text-[16px] font-bold text-[#0F2C4A]">
+                  {money(total)}
+                </Text>
+              </View>
+            </Group>
+          </>
+        ) : (
+          <Text className="text-[14px] text-[#6B7280] mt-5">
+            You&apos;re all caught up — nothing due.
+          </Text>
         )}
 
         {total > 0 ? (

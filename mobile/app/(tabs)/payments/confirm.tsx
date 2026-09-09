@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Btn, Card, Divider, Header, KV, Screen } from "@/components/ui";
+import { Btn, Divider, Group, Header, KV, Screen } from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
 import {
   allocatePaymentToLease,
@@ -87,24 +87,34 @@ export default function ConfirmPayment() {
           Review payment details
         </Text>
 
-        <Card>
-          <KV k="Tenant" v={p.tenantName ?? "—"} />
+        <Group>
+          <View className="px-4">
+            <KV k="Tenant" v={p.tenantName ?? "—"} />
+          </View>
           <Divider />
-          <KV k="Amount" v={`$${p.amount ?? "0.00"} USD`} />
+          <View className="px-4">
+            <KV k="Amount" v={`$${p.amount ?? "0.00"} USD`} />
+          </View>
           <Divider />
-          <KV
-            k="Payment Method"
-            v={METHOD_LABEL[p.method ?? ""] ?? p.method ?? "—"}
-          />
+          <View className="px-4">
+            <KV
+              k="Payment Method"
+              v={METHOD_LABEL[p.method ?? ""] ?? p.method ?? "—"}
+            />
+          </View>
           <Divider />
-          <KV k="Reference" v={p.reference || "—"} />
+          <View className="px-4">
+            <KV k="Reference" v={p.reference || "—"} />
+          </View>
           {p.proofUri ? (
             <>
               <Divider />
-              <KV k="Proof of payment" v="Attached" />
+              <View className="px-4">
+                <KV k="Proof of payment" v="Attached" />
+              </View>
             </>
           ) : null}
-        </Card>
+        </Group>
 
         {error ? (
           <Text className="text-[13px] text-[#DC2626] mt-4">{error}</Text>

@@ -60,22 +60,35 @@ export default function NewRequest() {
           <ErrorView message={error} onRetry={refetch} />
         ) : (
           <>
-            <Field label="Title" placeholder="e.g. Leaking kitchen tap" value={title} onChangeText={setTitle} />
+            <Field
+              label="Title"
+              placeholder="e.g. Leaking kitchen tap"
+              value={title}
+              onChangeText={setTitle}
+            />
 
             <Text className="text-[13px] text-[#6B7280] mb-1.5">Unit</Text>
             <Pressable
               onPress={() => setPickUnit((v) => !v)}
-              className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-xl px-3.5 py-3.5 mb-4"
+              className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-3.5 py-3.5 mb-4"
             >
               <Text className="text-[15px] text-[#0F2C4A]">
-                {selectedUnit ? `${selectedUnit.label} — ${selectedUnit.property?.name ?? ""}` : "Select a unit"}
+                {selectedUnit
+                  ? `${selectedUnit.label} — ${selectedUnit.property?.name ?? ""}`
+                  : "Select a unit"}
               </Text>
-              <Ionicons name={pickUnit ? "chevron-up" : "chevron-down"} size={18} color="#9CA3AF" />
+              <Ionicons
+                name={pickUnit ? "chevron-up" : "chevron-down"}
+                size={18}
+                color="#9CA3AF"
+              />
             </Pressable>
             {pickUnit ? (
-              <View className="bg-white border border-[#E5E9F0] rounded-xl -mt-2 mb-4 overflow-hidden">
+              <View className="bg-white border border-[#E5E9F0] rounded-lg -mt-2 mb-4 overflow-hidden">
                 {(units ?? []).length === 0 ? (
-                  <Text className="text-[13px] text-[#6B7280] px-4 py-3">No units available.</Text>
+                  <Text className="text-[13px] text-[#6B7280] px-4 py-3">
+                    No units available.
+                  </Text>
                 ) : (
                   (units ?? []).map((u) => (
                     <Pressable
@@ -97,7 +110,11 @@ export default function NewRequest() {
 
             <Text className="text-[13px] text-[#6B7280] mb-1.5">Priority</Text>
             <View className="mb-4">
-              <Pills options={PRIORITIES.map((p) => p.label)} value={priority} onChange={setPriority} />
+              <Pills
+                options={PRIORITIES.map((p) => p.label)}
+                value={priority}
+                onChange={setPriority}
+              />
             </View>
 
             <Field
@@ -110,7 +127,11 @@ export default function NewRequest() {
               onChangeText={setDescription}
             />
 
-            {submitError ? <Text className="text-[13px] text-[#DC2626] mb-4">{submitError}</Text> : null}
+            {submitError ? (
+              <Text className="text-[13px] text-[#DC2626] mb-4">
+                {submitError}
+              </Text>
+            ) : null}
 
             <Btn
               label={submitting ? "Submitting..." : "Submit Request"}

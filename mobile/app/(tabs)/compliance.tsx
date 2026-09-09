@@ -4,8 +4,9 @@ import * as WebBrowser from "expo-web-browser";
 import { Pressable, Text, View } from "react-native";
 import {
   Badge,
-  Card,
+  Divider,
   ErrorView,
+  Group,
   Header,
   LoadingView,
   Screen,
@@ -135,33 +136,34 @@ export default function Compliance() {
           />
         ) : (
           <>
-            <Card>
-              <View className="flex-row items-center">
-                <View className="h-11 w-11 rounded-full bg-[#DCFCE7] items-center justify-center">
-                  <Ionicons name="shield-checkmark" size={23} color="#16A34A" />
-                </View>
-                <View className="ml-3 flex-1">
-                  <Text className="text-[16px] font-semibold text-[#0F2C4A]">
-                    ZIMRA readiness
-                  </Text>
-                  <Text className="text-[12px] text-[#6B7280] mt-1">
-                    {profile ? "Profile registered" : "Profile not registered"}
-                  </Text>
-                </View>
-                <Badge
-                  text={profile ? "Ready" : "Action needed"}
-                  tone={profile ? "green" : "amber"}
-                />
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-3">
+                <Text className="text-[16px] font-semibold text-[#0F2C4A]">
+                  ZIMRA readiness
+                </Text>
+                <Text className="text-[12px] text-[#6B7280] mt-1">
+                  {profile ? "Profile registered" : "Profile not registered"}
+                </Text>
               </View>
-              {profile ? (
-                <View className="mt-4 border-t border-[#F1F5F9] pt-2">
-                  <View className="flex-row justify-between py-2">
+              <Badge
+                text={profile ? "Ready" : "Action needed"}
+                tone={profile ? "green" : "amber"}
+              />
+            </View>
+
+            {profile ? (
+              <Group className="mt-4">
+                <View className="px-4 py-2.5">
+                  <View className="flex-row justify-between py-1">
                     <Text className="text-[13px] text-[#6B7280]">TIN</Text>
                     <Text className="text-[13px] font-semibold text-[#0F2C4A]">
                       {profile.tin}
                     </Text>
                   </View>
-                  <View className="flex-row justify-between py-2">
+                </View>
+                <Divider />
+                <View className="px-4 py-2.5">
+                  <View className="flex-row justify-between py-1">
                     <Text className="text-[13px] text-[#6B7280]">
                       Taxpayer type
                     </Text>
@@ -169,7 +171,10 @@ export default function Compliance() {
                       {profile.taxpayerType}
                     </Text>
                   </View>
-                  <View className="flex-row justify-between py-2">
+                </View>
+                <Divider />
+                <View className="px-4 py-2.5">
+                  <View className="flex-row justify-between py-1">
                     <Text className="text-[13px] text-[#6B7280]">
                       VAT registered
                     </Text>
@@ -178,11 +183,11 @@ export default function Compliance() {
                     </Text>
                   </View>
                 </View>
-              ) : null}
-            </Card>
+              </Group>
+            ) : null}
 
             {!profile ? (
-              <Card className="mt-3">
+              <View className="mt-5">
                 <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
                   Add ZIMRA details
                 </Text>
@@ -207,19 +212,20 @@ export default function Compliance() {
                   onPress={saveProfile}
                   disabled={saving}
                 />
-              </Card>
+              </View>
             ) : null}
 
             <SectionTitle>Tax obligations</SectionTitle>
             {(obligations.data ?? []).length === 0 ? (
-              <Card>
-                <Text className="text-[13px] text-[#6B7280]">
-                  No tax obligations recorded.
-                </Text>
-              </Card>
+              <Text className="text-[13px] text-[#6B7280]">
+                No tax obligations recorded.
+              </Text>
             ) : (
               (obligations.data ?? []).map((obligation) => (
-                <Card key={obligation.id} className="mb-3">
+                <View
+                  key={obligation.id}
+                  className="border border-[#E5E9F0] rounded-lg bg-white px-4 py-3.5 mb-3"
+                >
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <Text className="text-[15px] font-semibold text-[#0F2C4A]">
@@ -234,7 +240,7 @@ export default function Compliance() {
                       tone={statusTone(obligation.status)}
                     />
                   </View>
-                  <View className="flex-row items-end justify-between mt-4">
+                  <View className="flex-row items-end justify-between mt-4 pt-3 border-t border-[#E5E9F0]">
                     <View>
                       <Text className="text-[11px] text-[#6B7280]">
                         Tax due
@@ -247,7 +253,7 @@ export default function Compliance() {
                       Due {obligation.dueDate}
                     </Text>
                   </View>
-                </Card>
+                </View>
               ))
             )}
 
@@ -266,82 +272,82 @@ export default function Compliance() {
                   variant="outline"
                 />
                 {(profile.documents ?? []).length === 0 ? (
-                  <Card className="mt-3">
-                    <Text className="text-[13px] text-[#6B7280]">
-                      No documents uploaded yet. Upload ZIMRA-related documents
-                      such as ITF263, VAT returns or correspondence.
-                    </Text>
-                  </Card>
+                  <Text className="text-[13px] text-[#6B7280] mt-3">
+                    No documents uploaded yet. Upload ZIMRA-related documents
+                    such as ITF263, VAT returns or correspondence.
+                  </Text>
                 ) : (
-                  (profile.documents ?? []).map((doc) => (
-                    <Card key={doc.id} className="mt-3">
-                      <View className="flex-row items-center">
-                        <View className="h-10 w-10 rounded-lg bg-[#EFF6FF] items-center justify-center">
+                  <Group className="mt-3">
+                    {(profile.documents ?? []).map((doc, i) => (
+                      <View key={doc.id}>
+                        {i > 0 ? <Divider /> : null}
+                        <View className="flex-row items-center px-4 py-3">
                           <Ionicons
                             name="document-text-outline"
                             size={20}
-                            color="#2563EB"
+                            color="#0F2C4A"
                           />
+                          <View className="ml-3 flex-1">
+                            <Text className="text-[14px] font-medium text-[#0F2C4A]">
+                              {doc.name}
+                            </Text>
+                            <Text className="text-[11px] text-[#6B7280] mt-0.5">
+                              {new Date(doc.uploadedAt).toLocaleDateString()}
+                            </Text>
+                          </View>
+                          <Pressable
+                            onPress={() => deleteDocument(doc.id)}
+                            hitSlop={8}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={19}
+                              color="#DC2626"
+                            />
+                          </Pressable>
                         </View>
-                        <View className="ml-3 flex-1">
-                          <Text className="text-[14px] font-medium text-[#0F2C4A]">
-                            {doc.name}
-                          </Text>
-                          <Text className="text-[11px] text-[#6B7280] mt-0.5">
-                            {new Date(doc.uploadedAt).toLocaleDateString()}
-                          </Text>
-                        </View>
-                        <Pressable
-                          onPress={() => deleteDocument(doc.id)}
-                          hitSlop={8}
-                        >
-                          <Ionicons
-                            name="trash-outline"
-                            size={19}
-                            color="#DC2626"
-                          />
-                        </Pressable>
                       </View>
-                    </Card>
-                  ))
+                    ))}
+                  </Group>
                 )}
 
                 <SectionTitle>Tax returns</SectionTitle>
                 {(taxReturns.data ?? []).length === 0 ? (
-                  <Card>
-                    <Text className="text-[13px] text-[#6B7280]">
-                      No tax returns filed yet.
-                    </Text>
-                  </Card>
+                  <Text className="text-[13px] text-[#6B7280]">
+                    No tax returns filed yet.
+                  </Text>
                 ) : (
-                  (taxReturns.data ?? []).map((taxReturn) => (
-                    <Card key={taxReturn.id} className="mb-3">
-                      <View className="flex-row items-center justify-between">
-                        <View className="flex-1 pr-2">
-                          <Text className="text-[15px] font-semibold text-[#0F2C4A]">
-                            {taxReturn.taxType.replaceAll("_", " ")}
-                          </Text>
-                          <Text className="text-[12px] text-[#6B7280] mt-1">
-                            {taxReturn.taxPeriodStart} to{" "}
-                            {taxReturn.taxPeriodEnd}
-                          </Text>
+                  <Group>
+                    {(taxReturns.data ?? []).map((taxReturn, i) => (
+                      <View key={taxReturn.id}>
+                        {i > 0 ? <Divider /> : null}
+                        <View className="flex-row items-center justify-between px-4 py-3">
+                          <View className="flex-1 pr-2">
+                            <Text className="text-[15px] font-semibold text-[#0F2C4A]">
+                              {taxReturn.taxType.replaceAll("_", " ")}
+                            </Text>
+                            <Text className="text-[12px] text-[#6B7280] mt-1">
+                              {taxReturn.taxPeriodStart} to{" "}
+                              {taxReturn.taxPeriodEnd}
+                            </Text>
+                          </View>
+                          <Pressable
+                            onPress={() => openTaxReturn(taxReturn.id)}
+                            className="flex-row items-center rounded-lg bg-[#0F2C4A] px-3 py-2"
+                          >
+                            <Ionicons
+                              name="download-outline"
+                              size={16}
+                              color="#FFFFFF"
+                            />
+                            <Text className="text-[12px] font-semibold text-white ml-1">
+                              PDF
+                            </Text>
+                          </Pressable>
                         </View>
-                        <Pressable
-                          onPress={() => openTaxReturn(taxReturn.id)}
-                          className="flex-row items-center rounded-lg bg-[#0F2C4A] px-3 py-2"
-                        >
-                          <Ionicons
-                            name="download-outline"
-                            size={16}
-                            color="#FFFFFF"
-                          />
-                          <Text className="text-[12px] font-semibold text-white ml-1">
-                            PDF
-                          </Text>
-                        </Pressable>
                       </View>
-                    </Card>
-                  ))
+                    ))}
+                  </Group>
                 )}
               </>
             ) : null}

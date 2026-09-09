@@ -2,8 +2,8 @@ import { router } from "expo-router";
 import { Text, View } from "react-native";
 import {
   Avatar,
-  Card,
   Divider,
+  Group,
   Header,
   Row,
   Screen,
@@ -37,7 +37,7 @@ export default function More() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="More" back={false} />
       <Screen>
-        <Card className="flex-row items-center">
+        <View className="flex-row items-center py-2">
           <Avatar
             initials={user ? initialsOf(user.name).toUpperCase() : "?"}
             size={52}
@@ -54,12 +54,12 @@ export default function More() {
               {user ? roleLabel(user.role) : ""}
             </Text>
           </View>
-        </Card>
+        </View>
 
         {isManagement ? (
           <>
             <SectionTitle>Management</SectionTitle>
-            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+            <Group>
               <Row
                 icon="people-outline"
                 title="Tenants"
@@ -107,26 +107,26 @@ export default function More() {
                 title="Compliance"
                 onPress={() => router.push("/(tabs)/compliance")}
               />
-            </View>
+            </Group>
           </>
         ) : null}
 
         {isAdmin ? (
           <>
             <SectionTitle>Admin</SectionTitle>
-            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+            <Group>
               <Row
                 icon="settings-outline"
                 title="Admin Console"
                 sub="Users, subscriptions, payments, audit & system"
                 onPress={() => router.push("/(tabs)/admin")}
               />
-            </View>
+            </Group>
           </>
         ) : null}
 
         <SectionTitle>Account</SectionTitle>
-        <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+        <Group>
           <Row
             icon="person-outline"
             title="Profile"
@@ -158,7 +158,7 @@ export default function More() {
             chevron={false}
             onPress={handleSignOut}
           />
-        </View>
+        </Group>
       </Screen>
     </View>
   );

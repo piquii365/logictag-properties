@@ -107,10 +107,62 @@ export function Card({
 }: ViewProps & { className?: string }) {
   return (
     <View
-      className={`bg-white rounded-2xl border border-[#E5E9F0] p-4 ${className}`}
+      className={`bg-white rounded-lg border border-[#E5E9F0] p-4 ${className}`}
       {...rest}
     >
       {children}
+    </View>
+  );
+}
+
+/**
+ * Flat bordered surface for a group of rows/items. Use this instead of a Card
+ * when the content is a list of rows separated by dividers — it reads as one
+ * structured block rather than a stack of floating boxes.
+ */
+export function Group({
+  className = "",
+  children,
+  ...rest
+}: ViewProps & { className?: string }) {
+  return (
+    <View
+      className={`bg-white rounded-lg border border-[#E5E9F0] overflow-hidden ${className}`}
+      {...rest}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * A headline metric: a dominant value with a quiet label. Renders flat (no box)
+ * so the number carries the hierarchy. `tone` colours the value.
+ */
+export function Metric({
+  value,
+  label,
+  tone = "#0F2C4A",
+  size = "lg",
+}: {
+  value: string;
+  label: string;
+  tone?: string;
+  size?: "lg" | "md";
+}) {
+  return (
+    <View>
+      <Text
+        className={
+          size === "lg" ? "text-[30px] font-bold" : "text-[22px] font-bold"
+        }
+        style={{ color: tone }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {value}
+      </Text>
+      <Text className="text-[12px] text-[#6B7280] mt-1">{label}</Text>
     </View>
   );
 }
@@ -145,7 +197,7 @@ export function Btn({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={`will-change-pressable flex-row items-center justify-center rounded-xl py-3.5 px-4 transition-transform duration-100 ease-out ${bg} ${
+      className={`will-change-pressable flex-row items-center justify-center rounded-lg py-3.5 px-4 transition-transform duration-100 ease-out ${bg} ${
         disabled ? "opacity-50" : "active:scale-[0.97]"
       } ${className}`}
     >
@@ -188,7 +240,7 @@ export function Field({
       {label ? (
         <Text className="text-[13px] text-[#6B7280] mb-1.5">{label}</Text>
       ) : null}
-      <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-xl px-3.5">
+      <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-lg px-3.5">
         <TextInput
           className="flex-1 py-3.5 text-[15px] text-[#0F2C4A]"
           placeholderTextColor="#9CA3AF"
@@ -355,7 +407,7 @@ export function Row({
 
 export function SearchBar(props: TextInputProps) {
   return (
-    <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-xl px-3 mb-3">
+    <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-lg px-3 mb-3">
       <Ionicons name="search" size={18} color="#9CA3AF" />
       <TextInput
         className="flex-1 py-3 px-2 text-[15px] text-[#0F2C4A]"
@@ -431,13 +483,6 @@ export function Fab({ onPress }: { onPress?: () => void }) {
     <Pressable
       onPress={onPress}
       className="absolute right-5 bottom-5 h-14 w-14 rounded-full bg-[#F96B1F] items-center justify-center transition-transform duration-100 ease-out active:scale-[0.93]"
-      style={{
-        elevation: 4,
-        shadowColor: "#000",
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-      }}
     >
       <Ionicons name="add" size={28} color="#fff" />
     </Pressable>

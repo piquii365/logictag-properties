@@ -1,6 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Linking, Text, View } from "react-native";
-import { Card, Divider, Header, Row, Screen, SectionTitle } from "@/components/ui";
+import {
+  Divider,
+  Group,
+  Header,
+  Row,
+  Screen,
+  SectionTitle,
+} from "@/components/ui";
 
 const FAQS = [
   {
@@ -27,12 +33,14 @@ export default function Help() {
       <Header title="Help & Support" />
       <Screen>
         <SectionTitle>Contact us</SectionTitle>
-        <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+        <Group>
           <Row
             icon="mail-outline"
             title="Email support"
             sub="support@logictagproperties.com"
-            onPress={() => Linking.openURL("mailto:support@logictagproperties.com")}
+            onPress={() =>
+              Linking.openURL("mailto:support@logictagproperties.com")
+            }
           />
           <Divider />
           <Row
@@ -41,20 +49,24 @@ export default function Help() {
             sub="+263 77 000 0000"
             onPress={() => Linking.openURL("tel:+263770000000")}
           />
-        </View>
+        </Group>
 
         <SectionTitle>Frequently asked questions</SectionTitle>
-        {FAQS.map((f) => (
-          <Card key={f.q} className="mb-3">
-            <View className="flex-row items-start">
-              <Ionicons name="help-circle-outline" size={18} color="#F96B1F" style={{ marginTop: 1 }} />
-              <View className="flex-1 ml-2">
-                <Text className="text-[14px] font-semibold text-[#0F2C4A]">{f.q}</Text>
-                <Text className="text-[13px] text-[#6B7280] mt-1 leading-5">{f.a}</Text>
+        <Group>
+          {FAQS.map((f, i) => (
+            <View key={f.q}>
+              {i > 0 ? <Divider /> : null}
+              <View className="px-4 py-3.5">
+                <Text className="text-[14px] font-semibold text-[#0F2C4A]">
+                  {f.q}
+                </Text>
+                <Text className="text-[13px] text-[#6B7280] mt-1 leading-5">
+                  {f.a}
+                </Text>
               </View>
             </View>
-          </Card>
-        ))}
+          ))}
+        </Group>
       </Screen>
     </View>
   );

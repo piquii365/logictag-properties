@@ -4,13 +4,14 @@ import { Pressable, Text, View } from "react-native";
 import {
   Badge,
   Btn,
-  Card,
   Divider,
   ErrorView,
+  Group,
   Header,
   KV,
   LoadingView,
   Screen,
+  SectionTitle,
 } from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -99,69 +100,81 @@ export default function RequestDetail() {
           />
         ) : (
           <>
-            <Card>
-              <View className="flex-row items-start justify-between mb-2">
-                <Text className="text-[18px] font-bold text-[#0F2C4A] flex-1 pr-3">
-                  {r.title}
-                </Text>
-                <Badge text={r.priority} tone={priorityTone(r.priority)} />
-              </View>
-              <Text className="text-[13px] text-[#6B7280] leading-5">
-                {r.description}
+            <View className="flex-row items-start justify-between mb-1">
+              <Text className="text-[18px] font-bold text-[#0F2C4A] flex-1 pr-3">
+                {r.title}
               </Text>
-            </Card>
+              <Badge text={r.priority} tone={priorityTone(r.priority)} />
+            </View>
+            <Text className="text-[13px] text-[#6B7280] leading-5 mb-5">
+              {r.description}
+            </Text>
 
-            <Card className="mt-3">
-              <KV
-                k="Status"
-                v={STATUS_LABEL[r.status]}
-                tone={
-                  r.status === "resolved" || r.status === "closed"
-                    ? "#16A34A"
-                    : "#D97706"
-                }
-              />
+            <Group>
+              <View className="px-4">
+                <KV
+                  k="Status"
+                  v={STATUS_LABEL[r.status]}
+                  tone={
+                    r.status === "resolved" || r.status === "closed"
+                      ? "#16A34A"
+                      : "#D97706"
+                  }
+                />
+              </View>
               <Divider />
-              <KV k="Unit" v={r.unit?.label ?? "—"} />
+              <View className="px-4">
+                <KV k="Unit" v={r.unit?.label ?? "—"} />
+              </View>
               <Divider />
-              <KV k="Property" v={r.unit?.property?.name ?? "—"} />
+              <View className="px-4">
+                <KV k="Property" v={r.unit?.property?.name ?? "—"} />
+              </View>
               <Divider />
-              <KV k="Reported by" v={r.reportedBy?.name ?? "—"} />
+              <View className="px-4">
+                <KV k="Reported by" v={r.reportedBy?.name ?? "—"} />
+              </View>
               <Divider />
-              <KV
-                k="Reported on"
-                v={new Date(r.openedAt).toLocaleDateString()}
-              />
+              <View className="px-4">
+                <KV
+                  k="Reported on"
+                  v={new Date(r.openedAt).toLocaleDateString()}
+                />
+              </View>
               {r.vendor ? (
                 <>
                   <Divider />
-                  <KV k="Vendor" v={r.vendor.name} />
+                  <View className="px-4">
+                    <KV k="Vendor" v={r.vendor.name} />
+                  </View>
                 </>
               ) : null}
-            </Card>
+            </Group>
 
-            <Card className="mt-3">
-              <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
-                Activity
-              </Text>
+            <SectionTitle>Activity</SectionTitle>
+            <Group>
               {(events.data ?? []).length === 0 ? (
-                <Text className="text-[13px] text-[#6B7280] leading-5">
-                  {new Date(r.openedAt).toLocaleString()} — Request submitted by{" "}
-                  {r.reportedBy?.name ?? "the reporter"}.
-                </Text>
-              ) : (
-                (events.data ?? []).map((e) => (
-                  <Text
-                    key={e.id}
-                    className="text-[13px] text-[#6B7280] leading-5 mt-2 first:mt-0"
-                  >
-                    {new Date(e.createdAt).toLocaleString()} —{" "}
-                    {e.type.replace(/_/g, " ")}
-                    {e.notes ? `: ${e.notes}` : ""}
+                <View className="px-4 py-3">
+                  <Text className="text-[13px] text-[#6B7280] leading-5">
+                    {new Date(r.openedAt).toLocaleString()} — Request submitted
+                    by {r.reportedBy?.name ?? "the reporter"}.
                   </Text>
+                </View>
+              ) : (
+                (events.data ?? []).map((e, i) => (
+                  <View key={e.id}>
+                    {i > 0 ? <Divider /> : null}
+                    <View className="px-4 py-3">
+                      <Text className="text-[13px] text-[#6B7280] leading-5">
+                        {new Date(e.createdAt).toLocaleString()} —{" "}
+                        {e.type.replace(/_/g, " ")}
+                        {e.notes ? `: ${e.notes}` : ""}
+                      </Text>
+                    </View>
+                  </View>
                 ))
               )}
-            </Card>
+            </Group>
 
             {actionError ? (
               <Text className="text-[13px] text-[#DC2626] mt-3">
@@ -170,31 +183,33 @@ export default function RequestDetail() {
             ) : null}
 
             {pickingVendor ? (
-              <Card className="mt-3">
-                <Text className="text-[13px] font-semibold text-[#0F2C4A] mb-2">
-                  Choose a vendor
-                </Text>
-                {approvedVendors.length === 0 ? (
-                  <Text className="text-[13px] text-[#6B7280]">
-                    No approved vendors available yet.
+              <Group className="mt-3">
+                <View className="px-4 py-3">
+                  <Text className="text-[13px] font-semibold text-[#0F2C4A] mb-2">
+                    Choose a vendor
                   </Text>
-                ) : (
-                  approvedVendors.map((v) => (
-                    <Pressable
-                      key={v.id}
-                      onPress={() => assignVendor(v.id)}
-                      className="py-2.5 border-t border-[#E5E9F0] first:border-t-0"
-                    >
-                      <Text className="text-[14px] text-[#0F2C4A]">
-                        {v.name}
-                      </Text>
-                      <Text className="text-[12px] text-[#6B7280]">
-                        {v.city}
-                      </Text>
-                    </Pressable>
-                  ))
-                )}
-              </Card>
+                  {approvedVendors.length === 0 ? (
+                    <Text className="text-[13px] text-[#6B7280]">
+                      No approved vendors available yet.
+                    </Text>
+                  ) : (
+                    approvedVendors.map((v) => (
+                      <Pressable
+                        key={v.id}
+                        onPress={() => assignVendor(v.id)}
+                        className="py-2.5 border-t border-[#E5E9F0] first:border-t-0"
+                      >
+                        <Text className="text-[14px] text-[#0F2C4A]">
+                          {v.name}
+                        </Text>
+                        <Text className="text-[12px] text-[#6B7280]">
+                          {v.city}
+                        </Text>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              </Group>
             ) : null}
 
             {!isTenantUser ? (

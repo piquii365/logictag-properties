@@ -80,14 +80,20 @@ export default function EcoCashPayment() {
           placeholder="e.g. Rent for this month"
         />
 
-        <View className="flex-row items-start bg-[#FFF7ED] border border-[#FED7AA] rounded-xl p-3.5 mb-6">
-          <Ionicons name="information-circle-outline" size={18} color="#C2410C" />
-          <Text className="text-[13px] text-[#9A3412] ml-2 flex-1 leading-5">
+        <View className="flex-row items-start border border-[#E5E9F0] rounded-lg p-3.5 mb-6">
+          <Ionicons
+            name="information-circle-outline"
+            size={18}
+            color="#6B7280"
+          />
+          <Text className="text-[13px] text-[#6B7280] ml-2 flex-1 leading-5">
             You will be prompted on your phone to approve the payment.
           </Text>
         </View>
 
-        {error ? <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text> : null}
+        {error ? (
+          <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text>
+        ) : null}
 
         <Btn
           label={submitting ? "Starting..." : `Pay ${money(Number(amount))}`}

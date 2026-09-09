@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
@@ -6,9 +5,9 @@ import { Image } from "expo-image";
 import {
   Bar,
   Btn,
-  Card,
   Divider,
   ErrorView,
+  Group,
   Header,
   LoadingView,
   Row,
@@ -24,15 +23,6 @@ import {
 } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 import { BASE_URL } from "@/lib/api";
-
-function Stat({ n, label }: { n: number | string; label: string }) {
-  return (
-    <View className="flex-1 items-center">
-      <Text className="text-[20px] font-bold text-[#0F2C4A]">{n}</Text>
-      <Text className="text-[11px] text-[#6B7280] mt-0.5">{label}</Text>
-    </View>
-  );
-}
 
 const OPEN_STATUSES = new Set([
   "open",
@@ -134,44 +124,61 @@ export default function PropertyDetail() {
               <Image
                 source={`${BASE_URL}${p.imageUrls[0]}`}
                 contentFit="cover"
-                className="h-40 rounded-2xl mb-4"
+                className="h-40 rounded-lg mb-4"
               />
-            ) : (
-              <View className="h-40 rounded-2xl bg-[#CBD5E1] items-center justify-center mb-4">
-                <Ionicons name="image-outline" size={40} color="#64748B" />
-              </View>
-            )}
+            ) : null}
 
             <Text className="text-[16px] font-semibold text-[#0F2C4A]">
-              {p.address},
+              {p.address}
             </Text>
-            <Text className="text-[13px] text-[#6B7280] mb-4">{p.city}</Text>
+            <Text className="text-[13px] text-[#6B7280]">{p.city}</Text>
 
-            <Card className="flex-row py-4">
-              <Stat n={unitList.length} label="Total Units" />
-              <Stat n={occupied} label="Occupied" />
-              <Stat n={vacant} label="Vacant" />
-            </Card>
+            {/* Unit occupancy, flat with dividers — no boxes. */}
+            <View className="flex-row mt-5 border-t border-b border-[#E5E9F0] py-4">
+              <View className="flex-1">
+                <Text className="text-[20px] font-bold text-[#0F2C4A]">
+                  {unitList.length}
+                </Text>
+                <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                  Total units
+                </Text>
+              </View>
+              <View className="w-px bg-[#E5E9F0]" />
+              <View className="flex-1 px-4">
+                <Text className="text-[20px] font-bold text-[#0F2C4A]">
+                  {occupied}
+                </Text>
+                <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                  Occupied
+                </Text>
+              </View>
+              <View className="w-px bg-[#E5E9F0]" />
+              <View className="flex-1 pl-4">
+                <Text className="text-[20px] font-bold text-[#0F2C4A]">
+                  {vacant}
+                </Text>
+                <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                  Vacant
+                </Text>
+              </View>
+            </View>
 
-            <Card className="mt-3">
+            <View className="mt-5">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-[13px] text-[#6B7280]">
-                  Occupancy Rate
+                  Occupancy rate
                 </Text>
                 <Text className="text-[15px] font-bold text-[#0F2C4A]">
                   {occupancy}%
                 </Text>
               </View>
               <Bar pct={occupancy} />
-            </Card>
+            </View>
 
-            <Card className="mt-3">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-[15px] font-semibold text-[#0F2C4A]">
-                  Financial Summary
-                </Text>
-                <Text className="text-[12px] text-[#6B7280]">All Time</Text>
-              </View>
+            <View className="mt-6">
+              <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
+                Financial summary
+              </Text>
               <View className="flex-row">
                 <View className="flex-1">
                   <Text className="text-[12px] text-[#6B7280] mb-1">
@@ -190,9 +197,9 @@ export default function PropertyDetail() {
                   </Text>
                 </View>
               </View>
-            </Card>
+            </View>
 
-            <View className="mt-3 rounded-2xl border border-[#E5E9F0] overflow-hidden">
+            <Group className="mt-5">
               <Row
                 icon="grid-outline"
                 title="Units"
@@ -223,7 +230,7 @@ export default function PropertyDetail() {
                   })
                 }
               />
-            </View>
+            </Group>
 
             <Btn
               label="Add Unit"

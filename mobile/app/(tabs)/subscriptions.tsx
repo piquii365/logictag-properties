@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import {
   Btn,
   Card,
+  Divider,
   ErrorView,
   Header,
   LoadingView,
@@ -84,35 +86,20 @@ function StatusBadge({ status }: { status: Subscription["status"] }) {
     canceled: "Cancelled",
     expired: "Expired",
   };
-  const styles: Record<Subscription["status"], string> = {
-    active: "bg-[#E8F7F2] text-[#087F5B]",
-    trialing: "bg-[#EEF2FF] text-[#4C51BF]",
-    past_due: "bg-[#FFF7E6] text-[#B7791F]",
-    canceled: "bg-[#FDECEC] text-[#C53030]",
-    expired: "bg-[#F1F5F9] text-[#64748B]",
-  };
 
   return (
-    <View className={`rounded-full px-3 py-1 ${styles[status]}`}>
-      <Text className="text-[11px] font-semibold">{labels[status]}</Text>
+    <View className="rounded-full border border-[#E5E9F0] bg-white px-3 py-1">
+      <Text className="text-[11px] font-semibold text-[#0F2C4A]">
+        {labels[status]}
+      </Text>
     </View>
   );
 }
 
 function PaymentStatus({ status }: { status: SubscriptionPayment["status"] }) {
-  const styles = {
-    succeeded: "bg-[#E8F7F2] text-[#087F5B]",
-    pending: "bg-[#FFF7E6] text-[#B7791F]",
-    failed: "bg-[#FDECEC] text-[#C53030]",
-  } as const;
-
-  const [background, foreground] = styles[status].split(" ");
-
   return (
-    <View className={`rounded-full px-2.5 py-1 ${background}`}>
-      <Text className={`text-[10px] font-semibold ${foreground}`}>
-        {status}
-      </Text>
+    <View className="rounded-full border border-[#E5E9F0] bg-white px-2.5 py-1">
+      <Text className="text-[10px] font-semibold text-[#0F2C4A]">{status}</Text>
     </View>
   );
 }
@@ -129,11 +116,11 @@ function DetailRow({
   return (
     <View
       className={`flex-row items-center justify-between py-3 ${
-        last ? "" : "border-b border-[#EEF1F4]"
+        last ? "" : "border-b border-[#E5E9F0]"
       }`}
     >
       <Text className="text-[12px] text-[#6B7280]">{label}</Text>
-      <Text className="max-w-[60%] text-right text-[12px] font-medium text-[#172B4D]">
+      <Text className="max-w-[60%] text-right text-[12px] font-medium text-[#0F2C4A]">
         {value}
       </Text>
     </View>
@@ -283,7 +270,7 @@ export default function SubscriptionManagement() {
   );
 
   return (
-    <View className="flex-1 bg-[#F5F7FA]">
+    <View className="flex-1 bg-[#F4F6F9]">
       <Header title="Subscription & Billing" />
 
       <Screen>
@@ -298,7 +285,7 @@ export default function SubscriptionManagement() {
           >
             {/* Header */}
             <View className="mb-5">
-              <Text className="text-[24px] font-bold text-[#102A43]">
+              <Text className="text-[24px] font-bold text-[#0F2C4A]">
                 Manage your subscription
               </Text>
 
@@ -309,8 +296,8 @@ export default function SubscriptionManagement() {
             </View>
 
             {actionError ? (
-              <View className="mb-4 rounded-xl border border-[#F4C7C7] bg-[#FFF5F5] px-4 py-3">
-                <Text className="text-[12px] font-semibold text-[#A61B1B]">
+              <View className="mb-4 rounded-lg border border-[#E5E9F0] bg-white px-4 py-3">
+                <Text className="text-[12px] font-semibold text-[#0F2C4A]">
                   {actionError}
                 </Text>
               </View>
@@ -319,7 +306,7 @@ export default function SubscriptionManagement() {
             {!subscription ? (
               /* ── No subscription yet ─────────────────────────── */
               <Card className="mb-4">
-                <Text className="text-[18px] font-bold text-[#102A43]">
+                <Text className="text-[18px] font-bold text-[#0F2C4A]">
                   No active subscription
                 </Text>
                 <Text className="mt-1 text-[13px] leading-5 text-[#6B7280]">
@@ -337,8 +324,8 @@ export default function SubscriptionManagement() {
             ) : (
               <>
                 {/* Current subscription hero */}
-                <Card className="mb-4 overflow-hidden p-0">
-                  <View className="bg-[#0F2C4A] px-5 py-5 rounded-2xl">
+                <View className="mb-4 overflow-hidden rounded-lg border border-[#E5E9F0] bg-white">
+                  <View className="bg-[#0F2C4A] px-5 py-5">
                     <View className="flex-row items-start justify-between">
                       <View className="flex-1">
                         <Text className="text-[11px] font-medium uppercase tracking-wider text-[#B7C8D9]">
@@ -435,14 +422,14 @@ export default function SubscriptionManagement() {
                       />
                     )}
                   </View>
-                </Card>
+                </View>
 
                 {subscription.status === "canceled" ? (
-                  <View className="mb-4 rounded-xl border border-[#F4C7C7] bg-[#FFF5F5] px-4 py-3">
-                    <Text className="text-[12px] font-semibold text-[#A61B1B]">
+                  <View className="mb-4 rounded-lg border border-[#E5E9F0] bg-white px-4 py-3">
+                    <Text className="text-[12px] font-semibold text-[#0F2C4A]">
                       Subscription cancelled
                     </Text>
-                    <Text className="mt-1 text-[11px] leading-4 text-[#8B3A3A]">
+                    <Text className="mt-1 text-[11px] leading-4 text-[#6B7280]">
                       Your subscription has been cancelled. You can resume it to
                       keep managing your properties.
                     </Text>
@@ -452,7 +439,7 @@ export default function SubscriptionManagement() {
             )}
 
             {/* Navigation */}
-            <View className="mb-4 flex-row rounded-xl bg-[#E9EDF2] p-1">
+            <View className="mb-4 flex-row rounded-lg bg-[#E5E9F0] p-1">
               {[
                 ["overview", "Overview"],
                 ["plans", "Plans"],
@@ -486,10 +473,10 @@ export default function SubscriptionManagement() {
                     <Text className="text-[11px] text-[#6B7280]">
                       Total paid
                     </Text>
-                    <Text className="mt-1 text-[18px] font-bold text-[#102A43]">
+                    <Text className="mt-1 text-[18px] font-bold text-[#0F2C4A]">
                       {formatMoney(totalPaid, currency)}
                     </Text>
-                    <Text className="mt-1 text-[10px] text-[#9AA5B1]">
+                    <Text className="mt-1 text-[10px] text-[#6B7280]">
                       {(payments ?? []).length} payment records
                     </Text>
                   </Card>
@@ -498,17 +485,17 @@ export default function SubscriptionManagement() {
                     <Text className="text-[11px] text-[#6B7280]">
                       Next charge
                     </Text>
-                    <Text className="mt-1 text-[18px] font-bold text-[#102A43]">
+                    <Text className="mt-1 text-[18px] font-bold text-[#0F2C4A]">
                       {formatMoney(amountMinor, currency)}
                     </Text>
-                    <Text className="mt-1 text-[10px] text-[#9AA5B1]">
+                    <Text className="mt-1 text-[10px] text-[#6B7280]">
                       {formatDate(nextBilling)}
                     </Text>
                   </Card>
                 </View>
 
                 <Card className="mb-4">
-                  <Text className="text-[15px] font-bold text-[#102A43]">
+                  <Text className="text-[15px] font-bold text-[#0F2C4A]">
                     Billing summary
                   </Text>
 
@@ -542,13 +529,13 @@ export default function SubscriptionManagement() {
 
                 <Card className="mb-4">
                   <View className="flex-row items-center justify-between">
-                    <Text className="text-[15px] font-bold text-[#102A43]">
+                    <Text className="text-[15px] font-bold text-[#0F2C4A]">
                       Payment method
                     </Text>
                   </View>
 
-                  <View className="mt-3 rounded-xl border border-[#E6EAF0] bg-[#F8FAFC] px-4 py-4">
-                    <Text className="text-[13px] font-semibold text-[#172B4D]">
+                  <View className="mt-3 rounded-lg border border-[#E5E9F0] bg-white px-4 py-4">
+                    <Text className="text-[13px] font-semibold text-[#0F2C4A]">
                       {subscription.provider ?? "No payment method set"}
                     </Text>
                     <Text className="mt-1 text-[11px] text-[#6B7280]">
@@ -560,7 +547,7 @@ export default function SubscriptionManagement() {
                 </Card>
 
                 <Card>
-                  <Text className="text-[15px] font-bold text-[#102A43]">
+                  <Text className="text-[15px] font-bold text-[#0F2C4A]">
                     Subscription information
                   </Text>
 
@@ -588,7 +575,7 @@ export default function SubscriptionManagement() {
             {activeTab === "plans" ? (
               <>
                 <View className="mb-4">
-                  <Text className="text-[18px] font-bold text-[#102A43]">
+                  <Text className="text-[18px] font-bold text-[#0F2C4A]">
                     Available plans
                   </Text>
 
@@ -598,7 +585,7 @@ export default function SubscriptionManagement() {
                   </Text>
                 </View>
 
-                <View className="mb-4 flex-row rounded-xl bg-[#E9EDF2] p-1">
+                <View className="mb-4 flex-row rounded-lg bg-[#E5E9F0] p-1">
                   {(["monthly", "yearly"] as BillingInterval[]).map((value) => (
                     <Pressable
                       key={value}
@@ -638,12 +625,12 @@ export default function SubscriptionManagement() {
                       <Card
                         key={plan.id}
                         className={`mb-4 ${
-                          isCurrent ? "border border-[#0F766E]" : ""
+                          isCurrent ? "border border-[#0F2C4A]" : ""
                         }`}
                       >
                         <View className="flex-row items-start justify-between">
                           <View className="flex-1">
-                            <Text className="text-[18px] font-bold text-[#102A43]">
+                            <Text className="text-[18px] font-bold text-[#0F2C4A]">
                               {plan.name}
                             </Text>
 
@@ -653,8 +640,8 @@ export default function SubscriptionManagement() {
                           </View>
 
                           {isCurrent ? (
-                            <View className="rounded-full bg-[#E8F7F2] px-2.5 py-1">
-                              <Text className="text-[10px] font-bold text-[#087F5B]">
+                            <View className="rounded-full border border-[#E5E9F0] bg-white px-2.5 py-1">
+                              <Text className="text-[10px] font-bold text-[#0F2C4A]">
                                 CURRENT
                               </Text>
                             </View>
@@ -662,7 +649,7 @@ export default function SubscriptionManagement() {
                         </View>
 
                         <View className="mt-4 flex-row items-end">
-                          <Text className="text-[25px] font-bold text-[#102A43]">
+                          <Text className="text-[25px] font-bold text-[#0F2C4A]">
                             {formatMoney(plan.amountMinor, plan.currency)}
                           </Text>
                           <Text className="mb-1 ml-1 text-[11px] text-[#6B7280]">
@@ -679,13 +666,16 @@ export default function SubscriptionManagement() {
                             : "Flat rate"}
                         </Text>
 
-                        <View className="mt-4 border-t border-[#EEF1F4] pt-3">
+                        <View className="mt-4 border-t border-[#E5E9F0] pt-3">
                           {Object.values(plan.features ?? {}).map((feature) => (
                             <View key={feature} className="mb-2 flex-row">
-                              <Text className="mr-2 text-[12px] font-bold text-[#0F766E]">
-                                ✓
-                              </Text>
-                              <Text className="flex-1 text-[12px] text-[#4A5568]">
+                              <Ionicons
+                                name="checkmark"
+                                size={14}
+                                color="#0F2C4A"
+                                style={{ marginTop: 1 }}
+                              />
+                              <Text className="ml-2 flex-1 text-[12px] text-[#6B7280]">
                                 {feature}
                               </Text>
                             </View>
@@ -720,7 +710,7 @@ export default function SubscriptionManagement() {
             {activeTab === "payments" ? (
               <>
                 <View className="mb-4">
-                  <Text className="text-[18px] font-bold text-[#102A43]">
+                  <Text className="text-[18px] font-bold text-[#0F2C4A]">
                     Payment history
                   </Text>
 
@@ -751,7 +741,7 @@ export default function SubscriptionManagement() {
                           <Text className="text-[11px] text-[#6B7280]">
                             Successful payments
                           </Text>
-                          <Text className="mt-1 text-[20px] font-bold text-[#102A43]">
+                          <Text className="mt-1 text-[20px] font-bold text-[#0F2C4A]">
                             {
                               (payments ?? []).filter(
                                 (payment) => payment.status === "succeeded",
@@ -764,7 +754,7 @@ export default function SubscriptionManagement() {
                           <Text className="text-right text-[11px] text-[#6B7280]">
                             Total paid
                           </Text>
-                          <Text className="mt-1 text-right text-[20px] font-bold text-[#102A43]">
+                          <Text className="mt-1 text-right text-[20px] font-bold text-[#0F2C4A]">
                             {formatMoney(totalPaid, currency)}
                           </Text>
                         </View>
@@ -782,7 +772,7 @@ export default function SubscriptionManagement() {
                         <Card key={payment.id} className="mb-3">
                           <View className="flex-row items-start justify-between">
                             <View className="flex-1">
-                              <Text className="text-[13px] font-semibold text-[#172B4D]">
+                              <Text className="text-[13px] font-semibold text-[#0F2C4A]">
                                 {currentPlan?.name ?? "Subscription"} payment
                               </Text>
 
@@ -798,14 +788,14 @@ export default function SubscriptionManagement() {
                           </View>
 
                           <View className="mt-3 flex-row items-end justify-between">
-                            <Text className="text-[17px] font-bold text-[#102A43]">
+                            <Text className="text-[17px] font-bold text-[#0F2C4A]">
                               {formatMoney(
                                 payment.amountMinor,
                                 payment.currency,
                               )}
                             </Text>
 
-                            <Text className="text-[10px] text-[#9AA5B1]">
+                            <Text className="text-[10px] text-[#6B7280]">
                               {payment.providerReference ??
                                 payment.id.slice(0, 8)}
                             </Text>

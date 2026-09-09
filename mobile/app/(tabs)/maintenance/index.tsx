@@ -2,8 +2,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
+  Divider,
   ErrorView,
   Fab,
+  Group,
   Header,
   LoadingView,
   Pills,
@@ -83,40 +85,45 @@ export default function Maintenance() {
           <ErrorView message={error} onRetry={refetch} />
         ) : (
           <>
-            {list.map((r) => (
-              <Pressable
-                key={r.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/maintenance/[id]",
-                    params: { id: r.id },
-                  })
-                }
-                className="bg-white border border-[#E5E9F0] rounded-2xl p-4 mb-3 transition-transform duration-100 ease-out active:scale-[0.98]"
-              >
-                <View className="flex-row items-start justify-between">
-                  <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">
-                    {r.title}
-                  </Text>
-                  <StatusDot
-                    text={r.priority}
-                    tone={priorityTone(r.priority)}
-                  />
+            <Group>
+              {list.map((r, i) => (
+                <View key={r.id}>
+                  {i > 0 ? <Divider /> : null}
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/maintenance/[id]",
+                        params: { id: r.id },
+                      })
+                    }
+                    className="px-4 py-3.5 active:bg-[#F4F6F9]"
+                  >
+                    <View className="flex-row items-start justify-between">
+                      <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">
+                        {r.title}
+                      </Text>
+                      <StatusDot
+                        text={r.priority}
+                        tone={priorityTone(r.priority)}
+                      />
+                    </View>
+                    <Text className="text-[12px] text-[#6B7280] mt-1">
+                      {r.unit?.label ?? "—"} · {r.unit?.property?.name ?? "—"}
+                    </Text>
+                    <View className="flex-row items-center justify-between mt-2.5">
+                      <Text className="text-[11px] text-[#94A3B8]">
+                        {r.reference} ·{" "}
+                        {new Date(r.openedAt).toLocaleDateString()}
+                      </Text>
+                      <StatusText
+                        text={STATUS_LABEL[r.status]}
+                        tone={statusTone(r.status)}
+                      />
+                    </View>
+                  </Pressable>
                 </View>
-                <Text className="text-[12px] text-[#6B7280] mt-1">
-                  {r.unit?.label ?? "—"} · {r.unit?.property?.name ?? "—"}
-                </Text>
-                <View className="flex-row items-center justify-between mt-3">
-                  <Text className="text-[11px] text-[#94A3B8]">
-                    {r.reference} · {new Date(r.openedAt).toLocaleDateString()}
-                  </Text>
-                  <StatusText
-                    text={STATUS_LABEL[r.status]}
-                    tone={statusTone(r.status)}
-                  />
-                </View>
-              </Pressable>
-            ))}
+              ))}
+            </Group>
 
             {list.length === 0 ? (
               <Text className="text-center text-[13px] text-[#6B7280] mt-10">

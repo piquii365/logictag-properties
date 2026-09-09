@@ -4,8 +4,10 @@ import { useMemo } from "react";
 import { Text, View } from "react-native";
 import { Pressable } from "react-native";
 import {
+  Divider,
   ErrorView,
   Fab,
+  Group,
   Header,
   LoadingView,
   Screen,
@@ -60,45 +62,47 @@ export default function Utilities() {
             No utilities set up yet.
           </Text>
         ) : (
-          <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden bg-white">
+          <Group>
             {visibleUtilities.map((u, i) => (
-              <Pressable
-                key={u.id}
-                onPress={
-                  canManage
-                    ? () =>
-                        router.push({
-                          pathname: "/(tabs)/utilities/charge",
-                          params: { utilityId: u.id },
-                        })
-                    : undefined
-                }
-                className={`flex-row items-center px-4 py-3.5 ${i ? "border-t border-[#E5E9F0]" : ""}`}
-              >
-                <Ionicons
-                  name={TYPE_ICON[u.type] ?? "flash-outline"}
-                  size={20}
-                  color="#F96B1F"
-                  style={{ marginRight: 12 }}
-                />
-                <View className="flex-1">
-                  <Text className="text-[14px] font-semibold text-[#0F2C4A]">
-                    {u.name}
-                  </Text>
-                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                    {propertiesById.get(u.propertyId)?.name ?? "—"} ·{" "}
-                    {u.billingMethod}
-                  </Text>
-                </View>
-                <Text
-                  className="text-[12px] font-medium"
-                  style={{ color: u.isActive ? "#16A34A" : "#94A3B8" }}
+              <View key={u.id}>
+                {i > 0 ? <Divider /> : null}
+                <Pressable
+                  onPress={
+                    canManage
+                      ? () =>
+                          router.push({
+                            pathname: "/(tabs)/utilities/charge",
+                            params: { utilityId: u.id },
+                          })
+                      : undefined
+                  }
+                  className="flex-row items-center px-4 py-3.5 active:bg-[#F4F6F9]"
                 >
-                  {u.isActive ? "Active" : "Inactive"}
-                </Text>
-              </Pressable>
+                  <Ionicons
+                    name={TYPE_ICON[u.type] ?? "flash-outline"}
+                    size={20}
+                    color="#0F2C4A"
+                    style={{ marginRight: 12 }}
+                  />
+                  <View className="flex-1">
+                    <Text className="text-[14px] font-semibold text-[#0F2C4A]">
+                      {u.name}
+                    </Text>
+                    <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                      {propertiesById.get(u.propertyId)?.name ?? "—"} ·{" "}
+                      {u.billingMethod}
+                    </Text>
+                  </View>
+                  <Text
+                    className="text-[12px] font-medium"
+                    style={{ color: u.isActive ? "#16A34A" : "#94A3B8" }}
+                  >
+                    {u.isActive ? "Active" : "Inactive"}
+                  </Text>
+                </Pressable>
+              </View>
             ))}
-          </View>
+          </Group>
         )}
       </Screen>
       {canManage ? (

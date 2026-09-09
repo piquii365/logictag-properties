@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
   ErrorView,
   Fab,
+  Group,
   Header,
   LoadingView,
   Pills,
@@ -28,7 +28,7 @@ function unitStats(units: Unit[]) {
   };
 }
 
-function PropertyCard({ p, units }: { p: Property; units: Unit[] }) {
+function PropertyRow({ p, units }: { p: Property; units: Unit[] }) {
   const { total, occupancy } = unitStats(units);
   return (
     <Pressable
@@ -38,18 +38,15 @@ function PropertyCard({ p, units }: { p: Property; units: Unit[] }) {
           params: { id: p.id },
         })
       }
-      className="flex-row items-center bg-white border border-[#E5E9F0] rounded-2xl p-3 mb-3 transition-transform duration-100 ease-out active:scale-[0.98]"
+      className="flex-row items-center px-4 py-4 active:bg-[#F8FAFC]"
     >
-      <View className="h-14 w-14 rounded-xl bg-[#E2E8F0] items-center justify-center mr-3">
-        <Ionicons name="business" size={26} color="#0F2C4A" />
-      </View>
-      <View className="flex-1">
+      <View className="flex-1 pr-3">
         <Text className="text-[15px] font-semibold text-[#0F2C4A]">
           {p.name}
         </Text>
         <Text className="text-[12px] text-[#6B7280] mt-0.5">{p.address}</Text>
-        <Text className="text-[12px] text-[#6B7280]">
-          {total} Unit{total === 1 ? "" : "s"} · {occupancy}% Occupied
+        <Text className="text-[12px] text-[#6B7280] mt-0.5">
+          {total} Unit{total === 1 ? "" : "s"} · {occupancy}% occupied
         </Text>
       </View>
       <StatusDot
@@ -104,13 +101,13 @@ export default function Properties() {
         ) : properties.error ? (
           <ErrorView message={properties.error} onRetry={properties.refetch} />
         ) : list.length ? (
-          list.map((p) => (
-            <PropertyCard
-              key={p.id}
-              p={p}
-              units={unitsByProperty.get(p.id) ?? []}
-            />
-          ))
+          <Group>
+            {list.map((p, i) => (
+              <View key={p.id} className={i ? "border-t border-[#E5E9F0]" : ""}>
+                <PropertyRow p={p} units={unitsByProperty.get(p.id) ?? []} />
+              </View>
+            ))}
+          </Group>
         ) : (
           <Text className="text-center text-[13px] text-[#6B7280] mt-10">
             No properties match this filter.

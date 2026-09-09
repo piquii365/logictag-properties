@@ -5,9 +5,9 @@ import {
   Avatar,
   Badge,
   Btn,
-  Card,
   Divider,
   ErrorView,
+  Group,
   Header,
   KV,
   LoadingView,
@@ -99,20 +99,34 @@ export default function UnitDetail() {
               />
             </View>
 
-            <Card>
-              <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-1">
-                Unit Information
-              </Text>
-              <KV k="Property" v={u.property?.name ?? "—"} />
-              <KV k="Floor" v={u.floor ?? "—"} />
-              <KV k="Bedrooms" v={String(u.bedrooms)} />
-              <KV k="Monthly Rent" v={`$${u.rent}`} />
-            </Card>
+            <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-1">
+              Unit information
+            </Text>
+            <Group>
+              <View className="px-4">
+                <KV k="Property" v={u.property?.name ?? "—"} />
+              </View>
+              <Divider />
+              <View className="px-4">
+                <KV k="Floor" v={u.floor ?? "—"} />
+              </View>
+              <Divider />
+              <View className="px-4">
+                <KV k="Bedrooms" v={String(u.bedrooms)} />
+              </View>
+              <Divider />
+              <View className="px-4">
+                <KV k="Monthly rent" v={`$${u.rent}`} />
+              </View>
+            </Group>
 
             {u.tenant ? (
               <>
-                <Card className="mt-3">
-                  <View className="flex-row items-center">
+                <Text className="text-[15px] font-semibold text-[#0F2C4A] mt-5 mb-1">
+                  Current tenant
+                </Text>
+                <Group>
+                  <View className="flex-row items-center px-4 py-3">
                     <Avatar
                       initials={u.tenant.name
                         .split(" ")
@@ -121,10 +135,7 @@ export default function UnitDetail() {
                       tint="#F96B1F"
                     />
                     <View className="ml-3 flex-1">
-                      <Text className="text-[12px] text-[#6B7280]">
-                        Current Tenant
-                      </Text>
-                      <Text className="text-[15px] font-semibold text-[#F96B1F]">
+                      <Text className="text-[15px] font-semibold text-[#0F2C4A]">
                         {u.tenant.name}
                       </Text>
                       {currentLease?.endDate ? (
@@ -135,14 +146,16 @@ export default function UnitDetail() {
                     </View>
                   </View>
                   <Divider />
-                  <KV
-                    k="Balance"
-                    v={balance ? money(balance) : "$0.00"}
-                    tone={balance ? "#DC2626" : "#16A34A"}
-                  />
-                </Card>
+                  <View className="px-4">
+                    <KV
+                      k="Balance"
+                      v={balance ? money(balance) : "$0.00"}
+                      tone={balance ? "#DC2626" : "#16A34A"}
+                    />
+                  </View>
+                </Group>
 
-                <View className="mt-3 rounded-2xl border border-[#E5E9F0] overflow-hidden">
+                <Group className="mt-3">
                   <Row
                     icon="document-text-outline"
                     title="Lease Details"
@@ -181,24 +194,26 @@ export default function UnitDetail() {
                       })
                     }
                   />
-                </View>
+                </Group>
               </>
             ) : (
-              <Card className="mt-3">
-                <Text className="text-[14px] text-[#6B7280]">
-                  This unit is vacant. Assign a tenant to start a lease.
-                </Text>
-                <Btn
-                  label="Assign Tenant"
-                  className="mt-4"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/tenants/new",
-                      params: { unitId },
-                    })
-                  }
-                />
-              </Card>
+              <Group className="mt-3">
+                <View className="px-4 py-4">
+                  <Text className="text-[14px] text-[#6B7280]">
+                    This unit is vacant. Assign a tenant to start a lease.
+                  </Text>
+                  <Btn
+                    label="Assign Tenant"
+                    className="mt-4"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/tenants/new",
+                        params: { unitId },
+                      })
+                    }
+                  />
+                </View>
+              </Group>
             )}
 
             <View className="flex-row gap-3 mt-5">

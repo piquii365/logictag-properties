@@ -1,15 +1,16 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
   ErrorView,
   Fab,
+  Group,
   Header,
   LoadingView,
   Pills,
   SearchBar,
   Screen,
+  StatusText,
 } from "@/components/ui";
 import { getPropertyUnits } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
@@ -20,6 +21,11 @@ const STATUS_LABEL: Record<UnitStatus, string> = {
   occupied: "Occupied",
   vacant: "Vacant",
   maintenance: "Maintenance",
+};
+const STATUS_TONE: Record<UnitStatus, "green" | "muted" | "amber"> = {
+  occupied: "green",
+  vacant: "muted",
+  maintenance: "amber",
 };
 
 export default function Units() {
@@ -58,7 +64,7 @@ export default function Units() {
         ) : error ? (
           <ErrorView message={error} onRetry={refetch} />
         ) : (
-          <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden bg-white">
+          <Group>
             {list.map((u: Unit, i) => (
               <Pressable
                 key={u.id}
@@ -68,16 +74,10 @@ export default function Units() {
                     params: { unitId: u.id },
                   })
                 }
-                className={`flex-row items-center px-4 py-3.5 transition-transform duration-100 ease-out active:scale-[0.98] active:bg-[#F8FAFC] ${
+                className={`flex-row items-center px-4 py-3.5 active:bg-[#F8FAFC] ${
                   i ? "border-t border-[#E5E9F0]" : ""
                 }`}
               >
-                <Ionicons
-                  name="person-circle-outline"
-                  size={24}
-                  color={u.status === "vacant" ? "#94A3B8" : "#F96B1F"}
-                  style={{ marginRight: 10 }}
-                />
                 <View className="flex-1">
                   <Text className="text-[14px] font-semibold text-[#0F2C4A]">
                     {u.label}
@@ -86,9 +86,13 @@ export default function Units() {
                     {u.tenant?.name ?? "Vacant"}
                   </Text>
                 </View>
-                <Text className="text-[14px] font-semibold text-[#0F2C4A] mr-3">
+                <Text className="text-[14px] font-semibold text-[#0F2C4A] mr-4">
                   ${u.rent}
                 </Text>
+                <StatusText
+                  text={STATUS_LABEL[u.status]}
+                  tone={STATUS_TONE[u.status]}
+                />
               </Pressable>
             ))}
             {list.length === 0 ? (
@@ -96,7 +100,7 @@ export default function Units() {
                 No units found.
               </Text>
             ) : null}
-          </View>
+          </Group>
         )}
       </Screen>
       <Fab

@@ -3,7 +3,16 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import { Avatar, Btn, Card, ErrorView, Field, Header, LoadingView, Screen } from "@/components/ui";
+import {
+  Avatar,
+  Btn,
+  ErrorView,
+  Field,
+  Group,
+  Header,
+  LoadingView,
+  Screen,
+} from "@/components/ui";
 import { getLeaseTenants, getLeases, getMyUnits, getTenants } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 import type { PaymentMethod } from "@/lib/types";
@@ -104,22 +113,24 @@ export default function RecordPayment() {
         ) : (
           <>
             {unit ? (
-              <Card className="flex-row items-center mb-5">
-                <Avatar
-                  initials={(unit.tenant?.name ?? "T")
-                    .slice(0, 2)
-                    .toUpperCase()}
-                  tint="#F96B1F"
-                />
-                <View className="ml-3">
-                  <Text className="text-[15px] font-semibold text-[#0F2C4A]">
-                    {unit.tenant?.name ?? "Tenant"}
-                  </Text>
-                  <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                    {unit.label} - {unit.property?.name ?? ""}
-                  </Text>
+              <Group className="mb-5">
+                <View className="flex-row items-center px-4 py-3">
+                  <Avatar
+                    initials={(unit.tenant?.name ?? "T")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                    tint="#F96B1F"
+                  />
+                  <View className="ml-3">
+                    <Text className="text-[15px] font-semibold text-[#0F2C4A]">
+                      {unit.tenant?.name ?? "Tenant"}
+                    </Text>
+                    <Text className="text-[12px] text-[#6B7280] mt-0.5">
+                      {unit.label} - {unit.property?.name ?? ""}
+                    </Text>
+                  </View>
                 </View>
-              </Card>
+              </Group>
             ) : (
               <>
                 <Text className="text-[13px] text-[#6B7280] mb-1.5">
@@ -127,7 +138,7 @@ export default function RecordPayment() {
                 </Text>
                 <Pressable
                   onPress={() => setPickTenant((v) => !v)}
-                  className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-xl px-3.5 py-3.5 mb-4"
+                  className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-3.5 py-3.5 mb-4"
                 >
                   <Text className="text-[15px] text-[#0F2C4A]">
                     {selectedTenant
@@ -141,7 +152,7 @@ export default function RecordPayment() {
                   />
                 </Pressable>
                 {pickTenant ? (
-                  <View className="bg-white border border-[#E5E9F0] rounded-xl -mt-2 mb-4 overflow-hidden">
+                  <View className="bg-white border border-[#E5E9F0] rounded-lg -mt-2 mb-4 overflow-hidden">
                     {(tenants.data ?? []).length === 0 ? (
                       <Text className="text-[13px] text-[#6B7280] px-4 py-3">
                         No tenants on record yet.
@@ -180,7 +191,7 @@ export default function RecordPayment() {
             </Text>
             <Pressable
               onPress={() => setPickMethod((v) => !v)}
-              className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-xl px-3.5 py-3.5 mb-4"
+              className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-3.5 py-3.5 mb-4"
             >
               <Text className="text-[15px] text-[#0F2C4A]">
                 {METHODS.find((m) => m.value === method)?.label}
@@ -192,7 +203,7 @@ export default function RecordPayment() {
               />
             </Pressable>
             {pickMethod ? (
-              <View className="bg-white border border-[#E5E9F0] rounded-xl -mt-2 mb-4 overflow-hidden">
+              <View className="bg-white border border-[#E5E9F0] rounded-lg -mt-2 mb-4 overflow-hidden">
                 {METHODS.map((m) => (
                   <Pressable
                     key={m.value}
@@ -221,7 +232,7 @@ export default function RecordPayment() {
               Proof of payment (optional)
             </Text>
             {proof ? (
-              <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-xl p-3 mb-4">
+              <View className="flex-row items-center bg-white border border-[#E5E9F0] rounded-lg p-3 mb-4">
                 <Image
                   source={{ uri: proof.uri }}
                   className="h-12 w-12 rounded-lg"

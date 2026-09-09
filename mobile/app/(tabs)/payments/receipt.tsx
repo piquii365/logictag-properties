@@ -3,7 +3,15 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Btn, Card, Header, KV, Screen, StatusIcon } from "@/components/ui";
+import {
+  Btn,
+  Divider,
+  Group,
+  Header,
+  KV,
+  Screen,
+  StatusIcon,
+} from "@/components/ui";
 import { apiErrorMessage } from "@/lib/api";
 import { uploadPaymentProof } from "@/lib/queries";
 
@@ -54,9 +62,9 @@ export default function Receipt() {
   }
 
   return (
-    <View className="flex-1 bg-[#F0FDF4]">
+    <View className="flex-1 bg-[#F4F6F9]">
       <Header title="Payment Successful" back={false} />
-      <Screen bg="#F0FDF4">
+      <Screen>
         <View className="mt-10 mb-6">
           <StatusIcon icon="checkmark" />
         </View>
@@ -68,11 +76,19 @@ export default function Receipt() {
           Your payment has been confirmed.
         </Text>
 
-        <Card>
-          <KV k="Amount Paid" v={`$${amount} USD`} tone="#16A34A" />
-          <KV k="Reference" v={reference ?? "—"} />
-          <KV k="Date" v={date ?? "—"} />
-        </Card>
+        <Group>
+          <View className="px-4">
+            <KV k="Amount Paid" v={`$${amount} USD`} tone="#16A34A" />
+          </View>
+          <Divider />
+          <View className="px-4">
+            <KV k="Reference" v={reference ?? "—"} />
+          </View>
+          <Divider />
+          <View className="px-4">
+            <KV k="Date" v={date ?? "—"} />
+          </View>
+        </Group>
 
         {paymentId ? (
           <View className="mt-5">
@@ -82,9 +98,9 @@ export default function Receipt() {
               </Text>
             ) : null}
             {uploaded ? (
-              <View className="flex-row items-center justify-center rounded-xl bg-[#DCFCE7] border border-[#BBF7D0] px-4 py-3">
+              <View className="flex-row items-center justify-center rounded-lg border border-[#E5E9F0] px-4 py-3">
                 <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                <Text className="text-[14px] font-medium text-[#15803D] ml-2">
+                <Text className="text-[14px] font-medium text-[#16A34A] ml-2">
                   Proof of payment uploaded
                 </Text>
               </View>

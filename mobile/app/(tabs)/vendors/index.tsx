@@ -1,7 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Card, ErrorView, Header, LoadingView, Screen, SearchBar, StatusDot } from "@/components/ui";
+import {
+  Divider,
+  ErrorView,
+  Group,
+  Header,
+  LoadingView,
+  Screen,
+  SearchBar,
+  StatusDot,
+} from "@/components/ui";
 import { getVendors } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 import type { VendorStatus } from "@/lib/types";
@@ -33,33 +42,51 @@ export default function Vendors() {
         ) : error ? (
           <ErrorView message={error} onRetry={refetch} />
         ) : list.length === 0 ? (
-          <Text className="text-center text-[13px] text-[#6B7280] mt-10">No vendors yet.</Text>
+          <Text className="text-center text-[13px] text-[#6B7280] mt-10">
+            No vendors yet.
+          </Text>
         ) : (
-          list.map((v) => (
-            <Card key={v.id} className="mb-3">
-              <View className="flex-row items-start justify-between">
-                <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">{v.name}</Text>
-                <StatusDot text={v.status} tone={STATUS_TONE[v.status]} />
-              </View>
-              <View className="flex-row items-center mt-2">
-                <Ionicons name="call-outline" size={13} color="#6B7280" />
-                <Text className="text-[13px] text-[#0F2C4A] ml-1.5">{v.contactPhone}</Text>
-              </View>
-              <View className="flex-row items-center mt-1">
-                <Ionicons name="location-outline" size={13} color="#6B7280" />
-                <Text className="text-[13px] text-[#0F2C4A] ml-1.5">{v.city}</Text>
-              </View>
-              {v.ratingsCount > 0 ? (
-                <View className="flex-row items-center mt-1">
-                  <Ionicons name="star" size={13} color="#F59E0B" />
-                  <Text className="text-[13px] text-[#0F2C4A] ml-1.5">
-                    {v.rating} ({v.ratingsCount} rating{v.ratingsCount === 1 ? "" : "s"}) ·{" "}
-                    {v.jobsCompleted} job{v.jobsCompleted === 1 ? "" : "s"} completed
-                  </Text>
+          <Group>
+            {list.map((v, i) => (
+              <View key={v.id}>
+                {i > 0 ? <Divider /> : null}
+                <View className="px-4 py-3.5">
+                  <View className="flex-row items-start justify-between">
+                    <Text className="text-[15px] font-semibold text-[#0F2C4A] flex-1 pr-3">
+                      {v.name}
+                    </Text>
+                    <StatusDot text={v.status} tone={STATUS_TONE[v.status]} />
+                  </View>
+                  <View className="flex-row items-center mt-2">
+                    <Ionicons name="call-outline" size={13} color="#6B7280" />
+                    <Text className="text-[13px] text-[#0F2C4A] ml-1.5">
+                      {v.contactPhone}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mt-1">
+                    <Ionicons
+                      name="location-outline"
+                      size={13}
+                      color="#6B7280"
+                    />
+                    <Text className="text-[13px] text-[#0F2C4A] ml-1.5">
+                      {v.city}
+                    </Text>
+                  </View>
+                  {v.ratingsCount > 0 ? (
+                    <View className="flex-row items-center mt-1">
+                      <Ionicons name="star" size={13} color="#F59E0B" />
+                      <Text className="text-[13px] text-[#0F2C4A] ml-1.5">
+                        {v.rating} ({v.ratingsCount} rating
+                        {v.ratingsCount === 1 ? "" : "s"}) · {v.jobsCompleted}{" "}
+                        job{v.jobsCompleted === 1 ? "" : "s"} completed
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
-              ) : null}
-            </Card>
-          ))
+              </View>
+            ))}
+          </Group>
         )}
       </Screen>
     </View>

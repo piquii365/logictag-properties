@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import {
   Divider,
   ErrorView,
+  Group,
   Header,
   LoadingView,
   Screen,
@@ -34,7 +35,7 @@ export default function Notifications() {
             You are all caught up.
           </Text>
         ) : (
-          <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+          <Group>
             {(notifications.data ?? []).map((notification, i) => (
               <View key={notification.id}>
                 {i ? <Divider /> : null}
@@ -42,7 +43,7 @@ export default function Notifications() {
                   onPress={() =>
                     notification.read ? undefined : read(notification.id)
                   }
-                  className="flex-row items-start bg-white px-4 py-4 active:bg-[#F8FAFC]"
+                  className="flex-row items-start px-4 py-4 active:bg-[#F4F6F9]"
                 >
                   <Ionicons
                     name={
@@ -51,7 +52,7 @@ export default function Notifications() {
                         : "notifications"
                     }
                     size={20}
-                    color={notification.read ? "#94A3B8" : "#F96B1F"}
+                    color={notification.read ? "#94A3B8" : "#0F2C4A"}
                   />
                   <View className="ml-3 flex-1">
                     <Text
@@ -72,7 +73,7 @@ export default function Notifications() {
                 </Pressable>
               </View>
             ))}
-          </View>
+          </Group>
         )}
       </Screen>
     </View>

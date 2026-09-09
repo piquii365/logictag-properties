@@ -5,9 +5,9 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
-  Card,
   Divider,
   ErrorView,
+  Group,
   Header,
   LoadingView,
   Row,
@@ -164,29 +164,28 @@ export default function Payments() {
           />
         ) : (
           <>
-            <Card>
-              <View className="flex-row">
-                <View className="flex-1">
-                  <Text className="text-[12px] text-[#6B7280] mb-1">
-                    Collected
-                  </Text>
-                  <Text className="text-[22px] font-bold text-[#16A34A]">
-                    {money(collected)}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[12px] text-[#6B7280] mb-1">
-                    Outstanding
-                  </Text>
-                  <Text className="text-[22px] font-bold text-[#DC2626]">
-                    {money(outstanding)}
-                  </Text>
-                </View>
+            <View className="flex-row border-t border-b border-[#E5E9F0] py-4">
+              <View className="flex-1">
+                <Text className="text-[12px] text-[#6B7280] mb-1">
+                  Collected
+                </Text>
+                <Text className="text-[22px] font-bold text-[#16A34A]">
+                  {money(collected)}
+                </Text>
               </View>
-            </Card>
+              <View className="w-px bg-[#E5E9F0]" />
+              <View className="flex-1 pl-4">
+                <Text className="text-[12px] text-[#6B7280] mb-1">
+                  Outstanding
+                </Text>
+                <Text className="text-[22px] font-bold text-[#DC2626]">
+                  {money(outstanding)}
+                </Text>
+              </View>
+            </View>
 
             <SectionTitle>Actions</SectionTitle>
-            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+            <Group>
               <Row
                 icon="add-circle-outline"
                 iconTint="#F96B1F"
@@ -202,12 +201,12 @@ export default function Payments() {
                 sub="Tenant self-service payment"
                 onPress={() => router.push("/(tabs)/payments/pay-rent")}
               />
-            </View>
+            </Group>
 
             <SectionTitle>Outstanding balances</SectionTitle>
-            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+            <Group>
               {[...outstandingByLease.entries()].length === 0 ? (
-                <Text className="text-center text-[13px] text-[#6B7280] py-6 bg-white">
+                <Text className="text-center text-[13px] text-[#6B7280] py-6">
                   Nothing outstanding.
                 </Text>
               ) : (
@@ -239,7 +238,7 @@ export default function Payments() {
                   },
                 )
               )}
-            </View>
+            </Group>
 
             <SectionTitle>Recent transactions</SectionTitle>
             {actionError ? (
@@ -247,7 +246,7 @@ export default function Payments() {
                 {actionError}
               </Text>
             ) : null}
-            <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden bg-white">
+            <Group>
               {recent.length === 0 ? (
                 <Text className="text-center text-[13px] text-[#6B7280] py-6">
                   No payments yet.
@@ -273,14 +272,14 @@ export default function Payments() {
                       {p.proofUrl ? (
                         <Pressable
                           onPress={() => openProof(p.proofUrl!)}
-                          className="flex-row items-center rounded-lg bg-[#EFF6FF] px-2.5 py-1.5"
+                          className="flex-row items-center rounded-lg border border-[#E5E9F0] px-2.5 py-1.5"
                         >
                           <Ionicons
                             name="eye-outline"
                             size={14}
-                            color="#2563EB"
+                            color="#0F2C4A"
                           />
-                          <Text className="text-[12px] font-medium text-[#2563EB] ml-1">
+                          <Text className="text-[12px] font-medium text-[#0F2C4A] ml-1">
                             View proof
                           </Text>
                         </Pressable>
@@ -288,7 +287,7 @@ export default function Payments() {
                         <Pressable
                           onPress={() => uploadProof(p.id)}
                           disabled={uploadingId === p.id}
-                          className="flex-row items-center rounded-lg bg-[#FFF7ED] px-2.5 py-1.5"
+                          className="flex-row items-center rounded-lg border border-[#E5E9F0] px-2.5 py-1.5"
                         >
                           <Ionicons
                             name={
@@ -297,9 +296,9 @@ export default function Payments() {
                                 : "cloud-upload-outline"
                             }
                             size={14}
-                            color="#C2410C"
+                            color="#0F2C4A"
                           />
-                          <Text className="text-[12px] font-medium text-[#C2410C] ml-1">
+                          <Text className="text-[12px] font-medium text-[#0F2C4A] ml-1">
                             {uploadingId === p.id
                               ? "Uploading..."
                               : "Upload proof"}
@@ -310,7 +309,7 @@ export default function Payments() {
                   </View>
                 ))
               )}
-            </View>
+            </Group>
           </>
         )}
       </Screen>
@@ -384,7 +383,7 @@ function PersonalPaymentsView({
       ) : (
         <>
           {myUnit ? (
-            <Card>
+            <View className="border-t border-b border-[#E5E9F0] py-4">
               <Text className="text-[12px] text-[#6B7280] mb-1">My unit</Text>
               <Text className="text-[18px] font-bold text-[#0F2C4A]">
                 {myUnit.label}
@@ -404,13 +403,13 @@ function PersonalPaymentsView({
                   {money(centsToDollars(outstandingMinor))}
                 </Text>
               </View>
-            </Card>
+            </View>
           ) : null}
 
           {isTenantUser ? (
             <>
               <SectionTitle>Actions</SectionTitle>
-              <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden">
+              <Group>
                 <Row
                   icon="card-outline"
                   iconTint="#F96B1F"
@@ -422,7 +421,7 @@ function PersonalPaymentsView({
                   }
                   onPress={() => router.push("/(tabs)/payments/pay-rent")}
                 />
-              </View>
+              </Group>
             </>
           ) : null}
 
@@ -432,7 +431,7 @@ function PersonalPaymentsView({
               {actionError}
             </Text>
           ) : null}
-          <View className="rounded-2xl border border-[#E5E9F0] overflow-hidden bg-white">
+          <Group>
             {recent.length === 0 ? (
               <Text className="text-center text-[13px] text-[#6B7280] py-6">
                 No payments yet.
@@ -458,14 +457,14 @@ function PersonalPaymentsView({
                     {p.proofUrl ? (
                       <Pressable
                         onPress={() => onOpenProof(p.proofUrl!)}
-                        className="flex-row items-center rounded-lg bg-[#EFF6FF] px-2.5 py-1.5"
+                        className="flex-row items-center rounded-lg border border-[#E5E9F0] px-2.5 py-1.5"
                       >
                         <Ionicons
                           name="eye-outline"
                           size={14}
-                          color="#2563EB"
+                          color="#0F2C4A"
                         />
-                        <Text className="text-[12px] font-medium text-[#2563EB] ml-1">
+                        <Text className="text-[12px] font-medium text-[#0F2C4A] ml-1">
                           View proof
                         </Text>
                       </Pressable>
@@ -473,7 +472,7 @@ function PersonalPaymentsView({
                       <Pressable
                         onPress={() => onUploadProof(p.id)}
                         disabled={uploadingId === p.id}
-                        className="flex-row items-center rounded-lg bg-[#FFF7ED] px-2.5 py-1.5"
+                        className="flex-row items-center rounded-lg border border-[#E5E9F0] px-2.5 py-1.5"
                       >
                         <Ionicons
                           name={
@@ -482,9 +481,9 @@ function PersonalPaymentsView({
                               : "cloud-upload-outline"
                           }
                           size={14}
-                          color="#C2410C"
+                          color="#0F2C4A"
                         />
-                        <Text className="text-[12px] font-medium text-[#C2410C] ml-1">
+                        <Text className="text-[12px] font-medium text-[#0F2C4A] ml-1">
                           {uploadingId === p.id
                             ? "Uploading..."
                             : "Upload proof"}
@@ -495,7 +494,7 @@ function PersonalPaymentsView({
                 </View>
               ))
             )}
-          </View>
+          </Group>
         </>
       )}
     </>
