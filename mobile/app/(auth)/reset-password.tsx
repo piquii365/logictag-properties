@@ -46,15 +46,20 @@ export default function ResetPassword() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="" />
       <Screen>
-        <Text className="text-[26px] font-bold text-[#0F2C4A]">Enter reset code</Text>
+        <Text className="text-[26px] font-bold text-[#0F2C4A]">
+          Enter reset code
+        </Text>
         <Text className="text-[14px] text-[#6B7280] mt-1 mb-6 leading-5">
-          We sent a reset code for {email ?? "your account"}. Enter it below with a new password.
+          We sent a reset code for {email ?? "your account"}. Enter it below
+          with a new password.
         </Text>
 
         <Field
           label="Reset code"
           placeholder="Paste the code from your email"
           autoCapitalize="none"
+          autoComplete="one-time-code"
+          textContentType="oneTimeCode"
           value={token}
           onChangeText={setToken}
         />
@@ -62,6 +67,8 @@ export default function ResetPassword() {
           label="New password"
           placeholder="At least 8 characters"
           secureTextEntry={hide}
+          autoComplete="new-password"
+          textContentType="newPassword"
           right={hide ? "eye-outline" : "eye-off-outline"}
           onRight={() => setHide((v) => !v)}
           value={password}
@@ -71,11 +78,15 @@ export default function ResetPassword() {
           label="Confirm new password"
           placeholder="Re-enter your new password"
           secureTextEntry={hide}
+          autoComplete="new-password"
+          textContentType="newPassword"
           value={confirm}
           onChangeText={setConfirm}
         />
 
-        {error ? <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text> : null}
+        {error ? (
+          <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text>
+        ) : null}
 
         <Btn
           label={submitting ? "Resetting..." : "Reset password"}

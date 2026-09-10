@@ -24,6 +24,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().email().optional(),
+  // WebAuthn / passkeys are optional: without these the passkey routes 404.
+  WEBAUTHN_RP_ID: z.string().optional(),
+  WEBAUTHN_RP_NAME: z.string().optional(),
+  WEBAUTHN_ORIGIN: z.string().optional(),
+  CLIENT_ORIGIN: z.string().optional(),
 });
 
 export function validateEnv(config: Record<string, unknown>) {

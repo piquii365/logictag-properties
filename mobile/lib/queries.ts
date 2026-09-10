@@ -31,6 +31,8 @@ import type {
   AuditLogListResponse,
   SystemOverview,
   TaxReturn,
+  TaxRule,
+  TenantIdentification,
 } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth";
 
@@ -465,9 +467,99 @@ export const getTaxReturns = (profileId?: string) =>
     params: profileId ? { profileId } : undefined,
   });
 
+/** A single tax return with its computed lines. */
+export const getTaxReturn = (id: string) =>
+  api<TaxReturn>(`/compliance/tax-returns/${id}`);
+
+/** Generate a draft tax return for a period from recorded income/expenses. */
+export const generateTaxReturn = (dto: {
+  zimraProfileId: string;
+  taxType: string;
+  taxPeriodStart: string;
+  taxPeriodEnd: string;
+  currency: string;
+}) =>
+  api<TaxReturn>("/compliance/tax-returns/generate", {
+    method: "POST",
+    body: dto,
+  });
+
+/** Record a tax obligation (what is owed, when, and under which rule). */
+export const createTaxObligation = (dto: {
+  zimraProfileId: string;
+  taxType: string;
+  liablePartyType: string;
+  liablePartyId?: string;
+  propertyId?: string;
+  leaseId?: string;
+  taxPeriodStart: string;
+  taxPeriodEnd: string;
+  taxableAmount: string;
+  dueDate: string;
+  currency: string;
+}) =>
+  api<TaxObligation>("/compliance/tax-obligations", {
+    method: "POST",
+    body: dto,
+  });
+
 /** Absolute URL of a tax return's PDF report (open in a browser / share). */
 export const taxReturnPdfUrl = (id: string) =>
   `${BASE_URL}/compliance/tax-returns/${id}.pdf`;
+
+// ── Tax rules (rates & effective windows) ────────────────────────
+
+export const getTaxRules = (taxType?: string) =>
+  api<TaxRule[]>("/compliance/tax-rules", {
+    params: taxType ? { taxType } : undefined,
+  });
+
+/** The rule in force for a tax type on a given date. */
+export const getTaxRuleForDate = (taxType: string, date: string) =>
+  api<TaxRule>("/compliance/tax-rules/lookup", { params: { taxType, date } });
+
+export const createTaxRule = (dto: {
+  code: string;
+  taxType: string;
+  jurisdiction?: string;
+  rate: string;
+  calculationMethod: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  sourceName: string;
+  sourceReference?: string;
+  version?: number;
+  active?: boolean;
+}) => api<TaxRule>("/compliance/tax-rules", { method: "POST", body: dto });
+
+// ── Tenant identification (ZIMRA / FIA) ──────────────────────────
+
+export const getTenantIdentification = (tenantId: string) =>
+  api<TenantIdentification | null>(
+    `/compliance/tenants/${tenantId}/identification`,
+  );
+
+export const saveTenantIdentification = (
+  tenantId: string,
+  dto: {
+    idType: string;
+    idNumber: string;
+    idIssueDate?: string;
+    idExpiryDate?: string;
+    issuingCountry?: string;
+    documentId?: string;
+  },
+) =>
+  api<TenantIdentification>(`/compliance/tenants/${tenantId}/identification`, {
+    method: "POST",
+    body: dto,
+  });
+
+export const verifyTenantIdentification = (tenantId: string) =>
+  api<TenantIdentification>(
+    `/compliance/tenants/${tenantId}/identification/verify`,
+    { method: "PATCH" },
+  );
 
 // ── Admin console ────────────────────────────────────────────────
 

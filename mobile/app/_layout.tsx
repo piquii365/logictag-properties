@@ -19,7 +19,15 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F4F6F9" } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "#F4F6F9" },
+      }}
+    >
+      {/* Legal pages are readable whether or not you're signed in, so they sit
+          outside both guards. */}
+
       <Stack.Protected guard={!user}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
@@ -27,6 +35,7 @@ function RootNavigator() {
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
+      <Stack.Screen name="legal" />
     </Stack>
   );
 }

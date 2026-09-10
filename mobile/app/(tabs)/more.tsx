@@ -27,10 +27,12 @@ export default function More() {
   const isAdmin = user?.role === "admin";
 
   async function handleSignOut() {
+    // Clearing `user` makes the Stack.Protected guard in app/_layout.tsx
+    // unmount the whole (tabs) navigator and fall back to the welcome screen.
+    // Do NOT call router.replace("/") afterwards: by then (tabs) is gone, so
+    // expo-router reports "action 'REPLACE' ... was not handled by any
+    // navigator". The guard already performs the redirect.
     await signOut();
-    // Belt-and-suspenders: the Stack.Protected guard also redirects once
-    // `user` clears, this just makes it immediate.
-    router.replace("/");
   }
 
   return (
@@ -149,6 +151,18 @@ export default function More() {
             icon="help-circle-outline"
             title="Help & Support"
             onPress={() => router.push("/(tabs)/help")}
+          />
+          <Divider />
+          <Row
+            icon="document-text-outline"
+            title="Terms of Service"
+            onPress={() => router.push("/(tabs)/terms")}
+          />
+          <Divider />
+          <Row
+            icon="shield-checkmark-outline"
+            title="Privacy Policy"
+            onPress={() => router.push("/(tabs)/privacy")}
           />
           <Divider />
           <Row

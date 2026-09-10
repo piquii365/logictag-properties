@@ -44,11 +44,22 @@ export function Header({
         {back ? (
           <Pressable
             hitSlop={12}
-            onPress={() =>
-              router.canGoBack()
-                ? router.back()
-                : router.replace("/(tabs)/dashboard")
-            }
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+                return;
+              }
+              // Nothing to pop (deep link / guard remount). Return to the root
+              // of the *current* stack instead of hard-coding a route: the
+              // Header is shared by both the (auth) and (tabs) groups, and
+              // whichever group is mounted depends on the signed-in state.
+              // Replacing to a route that isn't mounted (e.g. "index" while
+              // signed in, or "(tabs)/dashboard" while signed out) throws
+              // "action 'REPLACE' ... was not handled by any navigator".
+              if (router.canDismiss()) {
+                router.dismissAll();
+              }
+            }}
             className="mr-3"
           >
             <Ionicons name="chevron-back" size={24} color="#fff" />

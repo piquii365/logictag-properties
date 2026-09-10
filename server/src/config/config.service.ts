@@ -97,4 +97,18 @@ export class ConfigService {
   get isSmtpConfigured(): boolean {
     return !!this.smtpHost && !!this.smtpFrom;
   }
+
+  // WebAuthn / passkeys — optional; the feature is disabled without rpID+origin.
+  get webauthnRpId(): string | undefined {
+    return this.config.get<string>('WEBAUTHN_RP_ID');
+  }
+  get webauthnRpName(): string {
+    return this.config.get<string>('WEBAUTHN_RP_NAME', 'LogicTag Properties');
+  }
+  get webauthnOrigin(): string | undefined {
+    return this.config.get<string>('WEBAUTHN_ORIGIN');
+  }
+  get isWebauthnConfigured(): boolean {
+    return !!this.webauthnRpId && !!this.webauthnOrigin;
+  }
 }

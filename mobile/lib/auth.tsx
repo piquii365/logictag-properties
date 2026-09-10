@@ -4,6 +4,13 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { api, apiErrorMessage, BASE_URL, setRefreshHandler, setSessionToken } from "@/lib/api";
 import type { UserRole } from "@/lib/roles";
+import {
+  bufferToBase64Url,
+  getWebAuthn,
+  passkeyErrorMessage,
+  publicKeyCredentialRequestOptionsFromJSON,
+  type PublicKeyCredentialRequestOptionsJSON,
+} from "@/lib/webauthn";
 
 export type SessionUser = {
   id: string;
@@ -48,6 +55,11 @@ type AuthContextValue = {
   /** Opens Google's consent screen in a browser tab; resolves once signed in.
    * Resolves quietly (no throw) if the user backs out of the browser. */
   signInWithGoogle: () => Promise<void>;
+  /** True when the platform exposes a WebAuthn API (web / supported devices). */
+  passkeySupported: boolean;
+  /** Runs the passkey ceremony and resolves once signed in. Throws a friendly
+   * error when the user cancels or no passkey is available. */
+  signInWithPasskey: (email?: string) => Promise<void>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (
@@ -169,6 +181,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signInWithPasskey = useCallback(async (email?: string) => {
+    const webauthn = getWebAuthn();
+    if (!webauthn) {
+      throw new Error(
+        "Passkeys aren't available on this device. Try signing in with your password.",
+      );
+    }
+
+    // 1. Ask the server for a challenge (and, when we know the email, the
+    //    list of credentials to offer).
+    const options = await api<PublicKeyCredentialRequestOptionsJSON>(
+      "/auth/passkey/login/options",
+      {
+        method: "POST",
+        skipAuth: true,
+        body: { email: email?.trim() || undefined },
+      },
+    );
+
+    // 2. Hand it to the platform authenticator.
+    let assertion: PublicKeyCredential | null;
+    try {
+      assertion = (await webauthn.get(
+        publicKeyCredentialRequestOptionsFromJSON(options),
+      )) as PublicKeyCredential | null;
+    } catch (err) {
+      throw new Error(passkeyErrorMessage(err));
+    }
+    if (!assertion) {
+      throw new Error("Passkey sign-in was cancelled.");
+    }
+
+    // 3. Send the assertion back for verification; the server issues a session.
+    const response = assertion.response as AuthenticatorAssertionResponse;
+    const body = await api<SessionBody>("/auth/passkey/login/verify", {
+      method: "POST",
+      skipAuth: true,
+      body: {
+        credentialId: assertion.id,
+        clientDataJSON: bufferToBase64Url(response.clientDataJSON),
+        authenticatorData: bufferToBase64Url(response.authenticatorData),
+        signature: bufferToBase64Url(response.signature),
+        ...(response.userHandle
+          ? { userHandle: bufferToBase64Url(response.userHandle) }
+          : {}),
+      },
+    });
+    setSessionToken(body.accessToken);
+    setUser(await loadProfile());
+  }, []);
+
+  const passkeySupported = useMemo(() => getWebAuthn() !== null, []);
+
   const forgotPassword = useCallback(async (email: string) => {
     await api("/auth/forgot-password", { method: "POST", skipAuth: true, body: { email } });
   }, []);
@@ -212,6 +277,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle,
+      passkeySupported,
+      signInWithPasskey,
       signOut,
       forgotPassword,
       resetPassword,
@@ -225,6 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle,
+      passkeySupported,
+      signInWithPasskey,
       signOut,
       forgotPassword,
       resetPassword,

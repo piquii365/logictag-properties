@@ -28,10 +28,12 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { SystemModule } from './system/system.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     AppConfigModule,
+    MailModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

@@ -161,6 +161,16 @@ export const requests: Request[] = [
 export const money = (n: number) =>
   `$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+/** Like `money`, but prefixes the given ISO currency code (e.g. "ZWG 1,500.00"). */
+export const moneyIn = (n: number, currency?: string) => {
+  const amount = Math.abs(n).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  if (!currency || currency === "USD") return `$${amount}`;
+  return `${currency} ${amount}`;
+};
+
 export const moneyShort = (n: number) => `$${Math.abs(n).toLocaleString("en-US")}`;
 
 /** Server money fields are an integer count of minor units (cents) as a string. */

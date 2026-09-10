@@ -52,19 +52,32 @@ export default function SignUp() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="" />
       <Screen>
-        <Text className="text-[26px] font-bold text-[#0F2C4A]">Create account</Text>
+        <Text className="text-[26px] font-bold text-[#0F2C4A]">
+          Create account
+        </Text>
         <Text className="text-[14px] text-[#6B7280] mt-1 mb-1">
           Signing up as {roleLabel(role as UserRole)}
         </Text>
         <Pressable className="mb-5" onPress={() => router.back()}>
-          <Text className="text-[13px] text-[#F96B1F] font-medium">Change role</Text>
+          <Text className="text-[13px] text-[#F96B1F] font-medium">
+            Change role
+          </Text>
         </Pressable>
 
-        <Field label="Full name" placeholder="John Moyo" value={name} onChangeText={setName} />
+        <Field
+          label="Full name"
+          placeholder="John Moyo"
+          autoComplete="name"
+          textContentType="name"
+          value={name}
+          onChangeText={setName}
+        />
         <Field
           label="Email"
           placeholder="you@company.com"
           autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
@@ -72,6 +85,8 @@ export default function SignUp() {
         <Field
           label="Phone"
           placeholder="+263 77 123 4567"
+          autoComplete="tel"
+          textContentType="telephoneNumber"
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
@@ -80,6 +95,8 @@ export default function SignUp() {
           label="Password"
           placeholder="At least 8 characters"
           secureTextEntry={hide}
+          autoComplete="new-password"
+          textContentType="newPassword"
           right={hide ? "eye-outline" : "eye-off-outline"}
           onRight={() => setHide((v) => !v)}
           hint="Use 8+ characters with a number and a symbol."
@@ -87,7 +104,9 @@ export default function SignUp() {
           onChangeText={setPassword}
         />
 
-        {error ? <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text> : null}
+        {error ? (
+          <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text>
+        ) : null}
 
         <Btn
           label={submitting ? "Creating account..." : "Create Account"}
@@ -97,13 +116,31 @@ export default function SignUp() {
         />
 
         <Text className="text-[12px] text-[#6B7280] text-center mt-4 leading-5">
-          By creating an account you agree to the Terms of Service and Privacy Policy.
+          By creating an account you agree to our{" "}
+          <Text
+            className="text-[#F96B1F] font-semibold"
+            onPress={() => router.push("/legal/terms")}
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            className="text-[#F96B1F] font-semibold"
+            onPress={() => router.push("/legal/privacy")}
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
 
         <View className="flex-row justify-center mt-8">
-          <Text className="text-[13px] text-[#6B7280]">Already have an account? </Text>
+          <Text className="text-[13px] text-[#6B7280]">
+            Already have an account?{" "}
+          </Text>
           <Pressable onPress={() => router.replace("/(auth)/sign-in")}>
-            <Text className="text-[13px] text-[#F96B1F] font-semibold">Sign in</Text>
+            <Text className="text-[13px] text-[#F96B1F] font-semibold">
+              Sign in
+            </Text>
           </Pressable>
         </View>
       </Screen>

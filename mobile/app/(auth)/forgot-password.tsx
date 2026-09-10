@@ -31,7 +31,9 @@ export default function ForgotPassword() {
     <View className="flex-1 bg-[#F4F6F9]">
       <Header title="" />
       <Screen>
-        <Text className="text-[26px] font-bold text-[#0F2C4A]">Reset password</Text>
+        <Text className="text-[26px] font-bold text-[#0F2C4A]">
+          Reset password
+        </Text>
         <Text className="text-[14px] text-[#6B7280] mt-1 mb-6 leading-5">
           Enter the email on your account and we&apos;ll send you a reset link.
         </Text>
@@ -40,12 +42,16 @@ export default function ForgotPassword() {
           label="Email"
           placeholder="you@company.com"
           autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
         />
 
-        {error ? <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text> : null}
+        {error ? (
+          <Text className="text-[13px] text-[#DC2626] mb-4">{error}</Text>
+        ) : null}
 
         <Btn
           label={submitting ? "Sending..." : "Send reset link"}

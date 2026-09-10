@@ -1,8 +1,12 @@
 import { UserModule } from './../users/users.module';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { PasskeyController } from './passkey.controller';
+import { PasskeyService } from './passkey.service';
+import { PasskeyCredential } from './entities/passkey-credential.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigType } from '@nestjs/config';
@@ -30,10 +34,12 @@ import { isGoogleOAuthConfigured } from './config/google-oauth.enabled';
       }),
     }),
     UserModule,
+    TypeOrmModule.forFeature([PasskeyCredential]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, PasskeyController],
   providers: [
     AuthService,
+    PasskeyService,
     JwtStrategy,
     LocalStrategy,
     RefreshJwtStrategy,

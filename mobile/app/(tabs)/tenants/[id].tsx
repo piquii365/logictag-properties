@@ -1,23 +1,42 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import {
   Avatar,
   Badge,
+  Btn,
   Card,
   Divider,
   ErrorView,
+  Field,
   Header,
   LoadingView,
   Row,
   Screen,
+  Select,
 } from "@/components/ui";
 import { centsToDollars, money } from "@/lib/data";
-import { getLeases, getPayments, getRentCharges, getUnit } from "@/lib/queries";
+import { apiErrorMessage } from "@/lib/api";
+import {
+  getLeases,
+  getPayments,
+  getRentCharges,
+  getTenantIdentification,
+  getUnit,
+  saveTenantIdentification,
+  verifyTenantIdentification,
+} from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 
 const OUTSTANDING_STATUSES = new Set(["outstanding", "part_paid"]);
+
+const ID_TYPES = [
+  { label: "National ID", value: "national_id" },
+  { label: "Passport", value: "passport" },
+  { label: "Driver's licence", value: "drivers_licence" },
+  { label: "Company registration", value: "company_registration" },
+] as const;
 
 // This route's dynamic segment is a unit id: a unit's current occupant *is*
 // "the tenant" here, which sidesteps needing a separate Tenant CRM record
@@ -72,6 +91,57 @@ export default function TenantDetail() {
 
   const u = unit.data;
   const loading = unit.loading;
+
+  const tenantId = u?.tenant?.id;
+  const identification = useFetch(
+    () =>
+      tenantId ? getTenantIdentification(tenantId) : Promise.resolve(null),
+    [tenantId],
+  );
+
+  const [idType, setIdType] = useState("national_id");
+  const [idNumber, setIdNumber] = useState("");
+  const [idExpiry, setIdExpiry] = useState("");
+  const [savingId, setSavingId] = useState(false);
+  const [idError, setIdError] = useState<string | null>(null);
+
+  async function saveIdentification() {
+    if (!tenantId) return;
+    const clean = idNumber.trim();
+    if (!clean) {
+      setIdError("ID number is required.");
+      return;
+    }
+    setSavingId(true);
+    setIdError(null);
+    try {
+      await saveTenantIdentification(tenantId, {
+        idType,
+        idNumber: clean,
+        idExpiryDate: idExpiry.trim() || undefined,
+      });
+      await identification.refetch();
+      setIdNumber("");
+      setIdExpiry("");
+    } catch (err) {
+      setIdError(apiErrorMessage(err));
+    } finally {
+      setSavingId(false);
+    }
+  }
+
+  async function verifyIdentification() {
+    if (!tenantId) return;
+    setIdError(null);
+    try {
+      await verifyTenantIdentification(tenantId);
+      await identification.refetch();
+    } catch (err) {
+      setIdError(apiErrorMessage(err));
+    }
+  }
+
+  const ident = identification.data;
 
   return (
     <View className="flex-1 bg-[#F4F6F9]">
@@ -184,6 +254,100 @@ export default function TenantDetail() {
                   )}
                 </View>
               </View>
+            </Card>
+
+            <Card className="mt-3">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-[15px] font-semibold text-[#0F2C4A]">
+                  Identification
+                </Text>
+                {ident ? (
+                  <Badge
+                    text={ident.verified ? "Verified" : "Unverified"}
+                    tone={ident.verified ? "green" : "amber"}
+                  />
+                ) : null}
+              </View>
+
+              {ident ? (
+                <>
+                  <View className="flex-row justify-between py-1">
+                    <Text className="text-[13px] text-[#6B7280]">Type</Text>
+                    <Text className="text-[13px] font-semibold text-[#0F2C4A] capitalize">
+                      {ident.idType.replaceAll("_", " ")}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between py-1">
+                    <Text className="text-[13px] text-[#6B7280]">Number</Text>
+                    <Text className="text-[13px] font-semibold text-[#0F2C4A]">
+                      {ident.idNumber}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between py-1">
+                    <Text className="text-[13px] text-[#6B7280]">
+                      Issuing country
+                    </Text>
+                    <Text className="text-[13px] font-semibold text-[#0F2C4A]">
+                      {ident.issuingCountry}
+                    </Text>
+                  </View>
+                  {ident.idExpiryDate ? (
+                    <View className="flex-row justify-between py-1">
+                      <Text className="text-[13px] text-[#6B7280]">
+                        Expires
+                      </Text>
+                      <Text className="text-[13px] font-semibold text-[#0F2C4A]">
+                        {ident.idExpiryDate}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {!ident.verified ? (
+                    <View className="mt-3">
+                      <Btn
+                        label="Mark as verified"
+                        variant="outline"
+                        onPress={verifyIdentification}
+                      />
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <Text className="text-[12px] text-[#6B7280] mb-3 leading-5">
+                    Capture the tenant's identity document for ZIMRA and FIA
+                    record-keeping.
+                  </Text>
+                  <Select
+                    label="Document type"
+                    options={ID_TYPES}
+                    value={idType}
+                    onChange={setIdType}
+                  />
+                  <Field
+                    label="ID number"
+                    value={idNumber}
+                    onChangeText={setIdNumber}
+                    autoCapitalize="characters"
+                  />
+                  <Field
+                    label="Expiry date (optional)"
+                    value={idExpiry}
+                    onChangeText={setIdExpiry}
+                    placeholder="YYYY-MM-DD"
+                    autoCapitalize="none"
+                  />
+                  {idError ? (
+                    <Text className="text-[13px] text-[#DC2626] mb-3">
+                      {idError}
+                    </Text>
+                  ) : null}
+                  <Btn
+                    label={savingId ? "Saving..." : "Save identification"}
+                    onPress={saveIdentification}
+                    disabled={savingId}
+                  />
+                </>
+              )}
             </Card>
 
             <View className="mt-3 rounded-2xl border border-[#E5E9F0] overflow-hidden">

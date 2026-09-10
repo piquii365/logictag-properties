@@ -299,8 +299,11 @@ export type ComplianceProfile = {
   taxpayerName: string | null;
   taxpayerType: string;
   registrationStatus: string;
+  registrationDate: string | null;
   vatRegistered: boolean;
+  vatNumber: string | null;
   presumptiveRentalRegistered: boolean;
+  itf263Number: string | null;
   taxYearEndMonth: number;
   documents: ComplianceDocument[];
 };
@@ -431,4 +434,35 @@ export type TaxReturnLine = {
   description: string;
   amount: string;
   createdAt: string;
+};
+
+/** A versioned ZIMRA tax rule (rate + effective window) used to compute tax. */
+export type TaxRule = {
+  id: string;
+  code: string;
+  taxType: string;
+  jurisdiction: string;
+  rate: string;
+  calculationMethod: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  sourceName: string;
+  sourceReference: string | null;
+  version: number;
+  active: boolean;
+};
+
+/** A tenant's identity record, kept for ZIMRA / FIA compliance. */
+export type TenantIdentification = {
+  id: string;
+  tenantId: string;
+  idType: string;
+  idNumber: string;
+  idIssueDate: string | null;
+  idExpiryDate: string | null;
+  issuingCountry: string;
+  documentId: string | null;
+  verified: boolean;
+  verifiedBy: string | null;
+  verifiedAt: string | null;
 };

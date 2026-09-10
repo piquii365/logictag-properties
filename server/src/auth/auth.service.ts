@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 import { AuthJwtPayload } from './types/jwt-payload.auth';
 import type { ConfigType } from '@nestjs/config';
 import refreshJwtConfig from './config/refresh-jwt.config';
@@ -52,6 +53,7 @@ export class AuthService {
   constructor(
     private userService: UsersService,
     private jwtService: JwtService,
+    private readonly mail: MailService,
     @Inject(refreshJwtConfig.KEY)
     private refreshJwtConfigService: ConfigType<typeof refreshJwtConfig>,
   ) {}
@@ -289,24 +291,71 @@ export class AuthService {
     return createHash('sha256').update(token).digest('hex');
   }
 
-  private sendPasswordResetEmail(email: string, token: string) {
-    // ponytail: no mailer wired up yet. Log the link in non-production so the
-    // flow is testable end to end; swap for a real transport when one exists.
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.debug(`Password reset token for ${email}: ${token}`);
-    }
-    return Promise.resolve();
+  private async sendPasswordResetEmail(email: string, token: string) {
+    const link = this.buildAppLink('reset-password', { email, token });
+    await this.mail.send({
+      to: email,
+      subject: 'Reset your LogicTag Properties password',
+      text: [
+        'We received a request to reset your LogicTag Properties password.',
+        '',
+        `Reset code: ${token}`,
+        '',
+        `Or open this link to continue: ${link}`,
+        '',
+        'This code expires in 1 hour. If you did not request a reset you can',
+        'ignore this email — your password will not change.',
+      ].join('\n'),
+      html: this.wrapHtml(
+        'Reset your password',
+        `<p>We received a request to reset your LogicTag Properties password.</p>
+         <p style="font-size:15px">Reset code:</p>
+         <p style="font-family:monospace;font-size:20px;letter-spacing:2px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
+         <p><a href="${link}" style="color:#F96B1F">Open the reset page</a></p>
+         <p style="color:#6B7280;font-size:13px">This code expires in 1 hour. If you did not request a reset you can ignore this email — your password will not change.</p>`,
+      ),
+    });
   }
 
-  private sendEmailChangeEmail(email: string, token: string) {
-    // ponytail: no mailer wired up yet. Log the code in non-production so the
-    // flow is testable end to end; swap for a real transport when one exists.
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.debug(
-        `Email change confirmation code for ${email}: ${token}`,
-      );
+  private async sendEmailChangeEmail(email: string, token: string) {
+    await this.mail.send({
+      to: email,
+      subject: 'Confirm your new LogicTag Properties email',
+      text: [
+        'Use this code to confirm your new LogicTag Properties email address:',
+        '',
+        `Confirmation code: ${token}`,
+        '',
+        'This code expires in 1 hour. If you did not request this change you',
+        'can ignore this email — your address will stay the same.',
+      ].join('\n'),
+      html: this.wrapHtml(
+        'Confirm your new email',
+        `<p>Use this code to confirm your new LogicTag Properties email address:</p>
+         <p style="font-family:monospace;font-size:20px;letter-spacing:2px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
+         <p style="color:#6B7280;font-size:13px">This code expires in 1 hour. If you did not request this change you can ignore this email — your address will stay the same.</p>`,
+      ),
+    });
+  }
+
+  /** Deep link back into the mobile app (falls back to the web client). */
+  private buildAppLink(path: string, params: Record<string, string>): string {
+    const base = process.env.CLIENT_ORIGIN || 'logictagpropertiesmobile://';
+    const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
     }
-    return Promise.resolve();
+    return url.toString();
+  }
+
+  /** Minimal branded shell so the HTML part is not a bare paragraph. */
+  private wrapHtml(heading: string, body: string): string {
+    return `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#0F2C4A;max-width:520px">
+      <h2 style="color:#0F2C4A">${heading}</h2>
+      ${body}
+      <hr style="border:none;border-top:1px solid #E5E9F0;margin:24px 0" />
+      <p style="color:#6B7280;font-size:12px">LogicTag Properties (Private) Limited · Harare, Zimbabwe</p>
+    </div>`;
   }
 
   private isResetTokenValid(

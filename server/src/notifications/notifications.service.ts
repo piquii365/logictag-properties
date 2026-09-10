@@ -4,11 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, In, Repository } from 'typeorm';
-import { createTransport } from 'nodemailer';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
 import { UserRole } from '../auth/enums/role.enum';
 import { OWNER_ROLES, seesEverything } from '../common/access';
-import { ConfigService } from '../config/config.service';
+import { MailService } from '../mail/mail.service';
 import { User } from '../users/entities/user.entity';
 import { Tenant } from '../tenants/entities/tenant.entity';
 import { Vendor } from '../vendors/entities/vendor.entity';
@@ -32,7 +31,7 @@ export class NotificationsService {
 
   constructor(
     dataSource: DataSource,
-    private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {
     this.dataSource = dataSource;
     this.notifications = dataSource.getRepository(Notification);
@@ -263,7 +262,7 @@ export class NotificationsService {
   }
 
   private async sendEmail(notification: Notification) {
-    if (!this.config.isSmtpConfigured) return;
+    if (!this.mail.isConfigured) return;
 
     const preference = await this.preferences.findOne({
       where: {
@@ -283,29 +282,10 @@ export class NotificationsService {
     });
     if (!user?.email) return;
 
-    const transporter = createTransport({
-      host: this.config.smtpHost,
-      port: this.config.smtpPort,
-      secure: this.config.smtpSecure,
-      ...(this.config.smtpUser && this.config.smtpPassword
-        ? {
-            auth: {
-              user: this.config.smtpUser,
-              pass: this.config.smtpPassword,
-            },
-          }
-        : {}),
+    await this.mail.send({
+      to: user.email,
+      subject: notification.subject,
+      text: notification.body,
     });
-
-    try {
-      await transporter.sendMail({
-        from: this.config.smtpFrom,
-        to: user.email,
-        subject: notification.subject,
-        text: notification.body,
-      });
-    } catch (error) {
-      console.error('SMTP notification delivery failed', error);
-    }
   }
 }

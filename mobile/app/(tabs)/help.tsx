@@ -37,17 +37,15 @@ export default function Help() {
           <Row
             icon="mail-outline"
             title="Email support"
-            sub="support@logictagproperties.com"
-            onPress={() =>
-              Linking.openURL("mailto:support@logictagproperties.com")
-            }
+            sub="properties@logictag.co.zw"
+            onPress={() => Linking.openURL("mailto:properties@logictag.co.zw")}
           />
           <Divider />
           <Row
             icon="call-outline"
             title="Call us"
-            sub="+263 77 000 0000"
-            onPress={() => Linking.openURL("tel:+263770000000")}
+            sub="+263 78 024 9841"
+            onPress={() => Linking.openURL("tel:+263780249841")}
           />
         </Group>
 
