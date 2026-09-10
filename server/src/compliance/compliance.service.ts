@@ -23,6 +23,7 @@ import { Expense, ExpenseStatus } from '../expenses/entities/expense.entity';
 import { TaxReturn } from './entities/tax-return.entity';
 import { TaxReturnLine } from './entities/tax-return-line.entity';
 import { UserRole } from '../auth/enums/role.enum';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ComplianceService {
@@ -32,6 +33,7 @@ export class ComplianceService {
   private readonly identifications: Repository<TenantIdentification>;
   private readonly obligations: Repository<TaxObligation>;
   private readonly tenants: Repository<Tenant>;
+  private readonly users: Repository<User>;
   private readonly rentCharges: Repository<RentCharge>;
   private readonly expenses: Repository<Expense>;
   private readonly returns: Repository<TaxReturn>;
@@ -44,6 +46,7 @@ export class ComplianceService {
     this.identifications = dataSource.getRepository(TenantIdentification);
     this.obligations = dataSource.getRepository(TaxObligation);
     this.tenants = dataSource.getRepository(Tenant);
+    this.users = dataSource.getRepository(User);
     this.rentCharges = dataSource.getRepository(RentCharge);
     this.expenses = dataSource.getRepository(Expense);
     this.returns = dataSource.getRepository(TaxReturn);
@@ -136,6 +139,7 @@ export class ComplianceService {
     user: AuthJwtPayload,
     profileId: string,
     file?: Express.Multer.File,
+    documentType?: string,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
     const profile = await this.profiles.findOne({ where: { id: profileId } });
@@ -151,6 +155,7 @@ export class ComplianceService {
       mime: file.mimetype,
       sizeBytes: file.size,
       uploadedAt: new Date().toISOString(),
+      documentType: documentType?.trim() || undefined,
     });
     profile.documents = documents;
     return this.profiles.save(profile);
@@ -174,17 +179,47 @@ export class ComplianceService {
     return this.profiles.save(profile);
   }
 
+  private async resolveTenant(tenantId: string): Promise<Tenant | null> {
+    let tenant = await this.tenants.findOne({ where: { id: tenantId } });
+    if (tenant) return tenant;
+
+    // Check if tenantId was supplied as the tenant's user account id
+    tenant = await this.tenants.findOne({ where: { userId: tenantId } });
+    if (tenant) return tenant;
+
+    // If a user account exists with this ID, auto-link/create a corresponding Tenant record
+    const userAccount = await this.users.findOne({ where: { id: tenantId } });
+    if (userAccount) {
+      const names = (userAccount.name || 'Tenant').trim().split(' ');
+      const firstName = names[0] || 'Tenant';
+      const lastName = names.slice(1).join(' ') || firstName;
+      return this.tenants.save(
+        this.tenants.create({
+          userId: userAccount.id,
+          firstName,
+          lastName,
+          email: userAccount.email,
+          phone: userAccount.phone || '',
+        }),
+      );
+    }
+
+    return null;
+  }
+
   async saveTenantIdentification(
     user: AuthJwtPayload,
     tenantId: string,
     dto: CreateTenantIdentificationDto,
   ) {
-    this.assertBackOffice(user);
-    const tenant = await this.tenants.findOne({ where: { id: tenantId } });
+    this.assertCanManage(user);
+    const tenant = await this.resolveTenant(tenantId);
     if (!tenant) throw new NotFoundException('Tenant not found');
+
     const identification =
-      (await this.identifications.findOne({ where: { tenantId } })) ??
-      this.identifications.create({ tenantId });
+      (await this.identifications.findOne({
+        where: { tenantId: tenant.id },
+      })) ?? this.identifications.create({ tenantId: tenant.id });
     Object.assign(identification, {
       ...dto,
       idIssueDate: dto.idIssueDate ?? null,
@@ -198,16 +233,33 @@ export class ComplianceService {
     return this.identifications.save(identification);
   }
 
-  getTenantIdentification(user: AuthJwtPayload, tenantId: string) {
-    this.assertBackOffice(user);
-    return this.identifications.findOne({ where: { tenantId } });
+  async getTenantIdentification(user: AuthJwtPayload, tenantId: string) {
+    this.assertCanManage(user);
+    const direct = await this.identifications.findOne({ where: { tenantId } });
+    if (direct) return direct;
+
+    const tenant = await this.tenants.findOne({ where: { userId: tenantId } });
+    if (tenant) {
+      return this.identifications.findOne({ where: { tenantId: tenant.id } });
+    }
+    return null;
   }
 
   async verifyTenantIdentification(user: AuthJwtPayload, tenantId: string) {
-    this.assertBackOffice(user);
-    const identification = await this.identifications.findOne({
+    this.assertCanManage(user);
+    let identification = await this.identifications.findOne({
       where: { tenantId },
     });
+    if (!identification) {
+      const tenant = await this.tenants.findOne({
+        where: { userId: tenantId },
+      });
+      if (tenant) {
+        identification = await this.identifications.findOne({
+          where: { tenantId: tenant.id },
+        });
+      }
+    }
     if (!identification)
       throw new NotFoundException('Identification not found');
     identification.verified = true;
@@ -217,11 +269,14 @@ export class ComplianceService {
   }
 
   async createObligation(user: AuthJwtPayload, dto: CreateTaxObligationDto) {
-    this.assertBackOffice(user);
+    this.assertCanManage(user);
     const profile = await this.profiles.findOne({
       where: { id: dto.zimraProfileId },
     });
     if (!profile) throw new NotFoundException('ZIMRA profile not found');
+    if (!seesEverything(user) && profile.organizationId !== user.id) {
+      throw new ForbiddenException('You can only manage your own profile');
+    }
     const rule = await this.getRuleForDate(dto.taxType, dto.taxPeriodEnd);
     return this.obligations.save(
       this.obligations.create({
@@ -241,18 +296,25 @@ export class ComplianceService {
   listObligations(user: AuthJwtPayload, profileId?: string) {
     this.assertReadable(user);
     return this.obligations.find({
-      where: profileId ? { zimraProfileId: profileId } : undefined,
+      where: {
+        ...(profileId ? { zimraProfileId: profileId } : {}),
+        // Landlords/PMs only see their own organization's obligations.
+        ...(seesEverything(user) ? {} : { organizationId: user.id }),
+      },
       relations: { rule: true },
       order: { dueDate: 'ASC' },
     });
   }
 
   async generateTaxReturn(user: AuthJwtPayload, dto: GenerateTaxReturnDto) {
-    this.assertBackOffice(user);
+    this.assertCanManage(user);
     const profile = await this.profiles.findOne({
       where: { id: dto.zimraProfileId },
     });
     if (!profile) throw new NotFoundException('ZIMRA profile not found');
+    if (!seesEverything(user) && profile.organizationId !== user.id) {
+      throw new ForbiddenException('You can only manage your own profile');
+    }
     const existing = await this.returns.findOne({
       where: {
         zimraProfileId: dto.zimraProfileId,
@@ -350,7 +412,11 @@ export class ComplianceService {
   listTaxReturns(user: AuthJwtPayload, profileId?: string) {
     this.assertReadable(user);
     return this.returns.find({
-      where: profileId ? { zimraProfileId: profileId } : undefined,
+      where: {
+        ...(profileId ? { zimraProfileId: profileId } : {}),
+        // Landlords/PMs only see their own organization's returns.
+        ...(seesEverything(user) ? {} : { organizationId: user.id }),
+      },
       order: { taxPeriodEnd: 'DESC' },
     });
   }
@@ -359,6 +425,9 @@ export class ComplianceService {
     this.assertReadable(user);
     const taxReturn = await this.returns.findOne({ where: { id } });
     if (!taxReturn) throw new NotFoundException('Tax return not found');
+    if (!seesEverything(user) && taxReturn.organizationId !== user.id) {
+      throw new NotFoundException('Tax return not found');
+    }
     const lines = await this.returnLines.find({
       where: { taxReturnId: id },
       order: { lineType: 'ASC', createdAt: 'ASC' },
@@ -371,6 +440,9 @@ export class ComplianceService {
     this.assertReadable(user);
     const taxReturn = await this.returns.findOne({ where: { id } });
     if (!taxReturn) throw new NotFoundException('Tax return not found');
+    if (!seesEverything(user) && taxReturn.organizationId !== user.id) {
+      throw new NotFoundException('Tax return not found');
+    }
     const profile = await this.profiles.findOne({
       where: { id: taxReturn.zimraProfileId },
     });
@@ -409,9 +481,15 @@ export class ComplianceService {
     return ((BigInt(amountMinor) * rateScaled + 5000n) / 10000n).toString();
   }
 
-  private assertBackOffice(user: AuthJwtPayload) {
-    if (!seesEverything(user)) {
-      throw new ForbiddenException('Admin access required');
+  /**
+   * Landlords and property managers get the same compliance capabilities as
+   * admins, scoped to their own organization (enforced per-operation).
+   */
+  private assertCanManage(user: AuthJwtPayload) {
+    if (!seesEverything(user) && !OWNER_ROLES.includes(user.role)) {
+      throw new ForbiddenException(
+        'Only landlords and property managers can manage compliance data',
+      );
     }
   }
 

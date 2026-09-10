@@ -84,10 +84,16 @@ export class PaymentsService {
   }
 
   async create(user: AuthJwtPayload, dto: CreatePaymentDto): Promise<Payment> {
-    this.assertManages(user);
     const tenant = await this.tenants.findOne({ where: { id: dto.tenantId } });
     if (!tenant) {
       throw new NotFoundException('Tenant not found');
+    }
+    // Management records payments on any tenant's behalf; a tenant may only
+    // create a payment against their own tenant record (self-service).
+    if (!isBackOffice(user) && !OWNER_ROLES.includes(user.role)) {
+      if (user.role !== UserRole.TENANT || tenant.userId !== user.id) {
+        throw new ForbiddenException('Not allowed to manage payments');
+      }
     }
     return this.payments.save(
       this.payments.create({
@@ -434,13 +440,16 @@ export class PaymentsService {
     ) {
       return payment;
     }
-    throw new NotFoundException('Payment not found');
-  }
-
-  private assertManages(user: AuthJwtPayload) {
-    if (!isBackOffice(user) && !OWNER_ROLES.includes(user.role)) {
-      throw new ForbiddenException('Not allowed to manage payments');
+    // A tenant may manage (e.g. confirm) a payment that belongs to them.
+    if (
+      user.role === UserRole.TENANT &&
+      (await this.scopedToTenant(user.id)
+        .andWhere('payment.id = :id', { id: payment.id })
+        .getCount()) > 0
+    ) {
+      return payment;
     }
+    throw new NotFoundException('Payment not found');
   }
 
   /** Only payments tied to a lease can be traced to an owner; walk-in

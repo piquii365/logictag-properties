@@ -102,6 +102,8 @@ export type Tenant = {
 
 export type LeaseStatus = "draft" | "active" | "expired" | "terminated";
 
+export type RentFrequency = "monthly" | "quarterly" | "annually" | "weekly";
+
 export type Lease = {
   id: string;
   unitId: string;
@@ -110,7 +112,13 @@ export type Lease = {
   endDate: string | null;
   rentAmountMinor: string;
   currency: string;
+  frequency?: RentFrequency;
+  rentDueDay?: number;
+  depositMinor?: string;
   status: LeaseStatus;
+  activatedAt?: string | null;
+  terminatedAt?: string | null;
+  terminationReason?: string | null;
   createdAt: string;
 };
 
@@ -406,6 +414,8 @@ export type ComplianceDocument = {
   mime: string;
   sizeBytes: number;
   uploadedAt: string;
+  /** ZIMRA document category (e.g. "itf263", "vat_return"). */
+  documentType?: string;
 };
 
 export type TaxReturn = {

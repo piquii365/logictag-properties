@@ -46,8 +46,9 @@ export class ComplianceOperationsController {
     @CurrentUser() user: AuthJwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file?: Express.Multer.File,
+    @Body('documentType') documentType?: string,
   ) {
-    return this.compliance.uploadProfileDocument(user, id, file);
+    return this.compliance.uploadProfileDocument(user, id, file, documentType);
   }
 
   @Delete('zimra/profiles/:id/documents/:documentId')

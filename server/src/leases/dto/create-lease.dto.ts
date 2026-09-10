@@ -17,9 +17,14 @@ export class CreateLeaseDto {
   @IsUUID()
   unitId!: string;
 
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(32)
-  reference!: string;
+  reference?: string;
 
   @IsDateString()
   startDate!: string;

@@ -11,6 +11,7 @@ import { Tenant } from '../tenants/entities/tenant.entity';
 import { Unit } from '../properties/entities/unit.entity';
 import { Property } from '../properties/entities/property.entity';
 import { UserRole } from '../auth/enums/role.enum';
+import { LeaseStatus } from '../common/enums/leasing.enum';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
 import { CreateLeaseDto } from './dto/create-lease.dto';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
@@ -66,9 +67,36 @@ export class LeasesService {
     if (OWNER_ROLES.includes(user.role) && unit.propertyId) {
       await this.assertOwnsUnit(user.id, unit.id);
     }
-    return this.leases.save(
-      this.leases.create({ ...dto, createdByUserId: user.id }),
+    const { tenantId, ...leaseData } = dto;
+    const reference =
+      dto.reference?.trim() || `LSE-${Date.now().toString(36).toUpperCase()}`;
+
+    const lease = await this.leases.save(
+      this.leases.create({
+        ...leaseData,
+        reference,
+        status: LeaseStatus.DRAFT,
+        createdByUserId: user.id,
+      }),
     );
+
+    if (tenantId) {
+      let tenant = await this.tenants.findOne({ where: { id: tenantId } });
+      if (!tenant) {
+        tenant = await this.tenants.findOne({ where: { userId: tenantId } });
+      }
+      if (tenant) {
+        await this.leaseTenants.save(
+          this.leaseTenants.create({
+            leaseId: lease.id,
+            tenantId: tenant.id,
+            isPrimary: true,
+          }),
+        );
+      }
+    }
+
+    return lease;
   }
 
   async update(
@@ -77,7 +105,37 @@ export class LeasesService {
     dto: UpdateLeaseDto,
   ): Promise<Lease> {
     const lease = await this.findManageable(user, id);
+    if (
+      dto.status === LeaseStatus.ACTIVE &&
+      lease.status !== LeaseStatus.ACTIVE
+    ) {
+      lease.activatedAt = new Date();
+    } else if (
+      dto.status === LeaseStatus.TERMINATED &&
+      lease.status !== LeaseStatus.TERMINATED
+    ) {
+      lease.terminatedAt = new Date();
+    }
     Object.assign(lease, dto);
+    return this.leases.save(lease);
+  }
+
+  async activate(user: AuthJwtPayload, id: string): Promise<Lease> {
+    const lease = await this.findManageable(user, id);
+    lease.status = LeaseStatus.ACTIVE;
+    lease.activatedAt = new Date();
+    return this.leases.save(lease);
+  }
+
+  async terminate(
+    user: AuthJwtPayload,
+    id: string,
+    reason?: string,
+  ): Promise<Lease> {
+    const lease = await this.findManageable(user, id);
+    lease.status = LeaseStatus.TERMINATED;
+    lease.terminatedAt = new Date();
+    lease.terminationReason = reason ?? null;
     return this.leases.save(lease);
   }
 
@@ -94,14 +152,17 @@ export class LeasesService {
     dto: AddLeaseTenantDto,
   ): Promise<LeaseTenant> {
     await this.findManageable(user, leaseId);
-    const tenant = await this.tenants.findOne({ where: { id: dto.tenantId } });
+    let tenant = await this.tenants.findOne({ where: { id: dto.tenantId } });
+    if (!tenant) {
+      tenant = await this.tenants.findOne({ where: { userId: dto.tenantId } });
+    }
     if (!tenant) {
       throw new NotFoundException('Tenant not found');
     }
     return this.leaseTenants.save(
       this.leaseTenants.create({
         leaseId,
-        tenantId: dto.tenantId,
+        tenantId: tenant.id,
         isPrimary: dto.isPrimary ?? false,
       }),
     );

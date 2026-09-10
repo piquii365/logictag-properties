@@ -3,6 +3,8 @@
 import { api, BASE_URL } from "@/lib/api";
 import type {
   Lease,
+  LeaseStatus,
+  RentFrequency,
   MaintenanceRequest,
   MaintenanceRequestEvent,
   MaintenancePriority,
@@ -195,8 +197,50 @@ export const createTenant = (dto: {
 // ── Leases & billing ──────────────────────────────────────────────
 
 export const getLeases = () => api<Lease[]>("/leases");
+export const createLease = (dto: {
+  unitId: string;
+  reference?: string;
+  startDate: string;
+  endDate?: string;
+  rentAmountMinor: string;
+  currency?: string;
+  frequency: RentFrequency;
+  rentDueDay?: number;
+  depositMinor?: string;
+  tenantId?: string;
+}) => api<Lease>("/leases", { method: "POST", body: dto });
+export const updateLease = (
+  id: string,
+  dto: Partial<{
+    reference: string;
+    startDate: string;
+    endDate?: string;
+    rentAmountMinor: string;
+    currency?: string;
+    frequency: RentFrequency;
+    rentDueDay?: number;
+    depositMinor?: string;
+    status?: LeaseStatus;
+    terminationReason?: string;
+  }>,
+) => api<Lease>(`/leases/${id}`, { method: "PATCH", body: dto });
+export const activateLease = (id: string) =>
+  api<Lease>(`/leases/${id}/activate`, { method: "PATCH" });
+export const terminateLease = (id: string, reason?: string) =>
+  api<Lease>(`/leases/${id}/terminate`, {
+    method: "PATCH",
+    body: { reason },
+  });
 export const getLeaseTenants = (leaseId: string) =>
   api<{ tenantId: string; isPrimary: boolean }[]>(`/leases/${leaseId}/tenants`);
+export const addLeaseTenant = (
+  leaseId: string,
+  dto: { tenantId: string; isPrimary?: boolean },
+) =>
+  api<{ id: string; leaseId: string; tenantId: string; isPrimary: boolean }>(
+    `/leases/${leaseId}/tenants`,
+    { method: "POST", body: dto },
+  );
 export const getRentCharges = () => api<RentCharge[]>("/rent-charges");
 export const getUtilityCharges = () => api<UtilityCharge[]>("/utility-charges");
 export const createUtilityCharge = (dto: {
@@ -382,6 +426,32 @@ export const updatePaymentStatus = (
     body: { status, failureReason },
   });
 
+/** A payment method offered by the PesePay gateway (e.g. EcoCash, InnBucks). */
+export type PesepayMethod = {
+  code: string;
+  name: string;
+  description?: string | null;
+};
+
+/** Payment methods the PesePay gateway currently supports. */
+export const getPesepayMethods = () =>
+  api<PesepayMethod[]>("/payments/pesepay/methods");
+
+/** Kick off a real PesePay transaction for a payment. Returns the payment with
+ * its `providerReference`/`pollUrl` populated so the client can poll status. */
+export const initiatePesepay = (
+  id: string,
+  dto: { phoneNumber: string; paymentMethodCode: string },
+) =>
+  api<Payment>(`/payments/${id}/pesepay/initiate`, {
+    method: "POST",
+    body: dto,
+  });
+
+/** Poll the gateway for the latest status of an initiated payment. */
+export const checkPesepayStatus = (id: string) =>
+  api<Payment>(`/payments/${id}/pesepay/status`);
+
 const createPaymentAllocation = (dto: {
   paymentId: string;
   allocatableType: "rent_charges" | "utility_charges";
@@ -442,10 +512,11 @@ export function uploadPaymentProof(
 /** Upload a ZIMRA / compliance document to a profile. */
 export function uploadComplianceDocument(
   profileId: string,
-  file: { uri: string; name: string; type: string },
+  file: { uri: string; name: string; type: string; documentType?: string },
 ) {
   const form = new FormData();
   form.append("file", file as unknown as Blob);
+  if (file.documentType) form.append("documentType", file.documentType);
   return api<ComplianceProfile>(
     `/compliance/zimra/profiles/${profileId}/documents`,
     { method: "POST", body: form },

@@ -56,12 +56,14 @@ export default function ResetPassword() {
 
         <Field
           label="Reset code"
-          placeholder="Paste the code from your email"
+          placeholder="6-digit code from your email"
           autoCapitalize="none"
           autoComplete="one-time-code"
           textContentType="oneTimeCode"
+          keyboardType="number-pad"
+          maxLength={6}
           value={token}
-          onChangeText={setToken}
+          onChangeText={(v) => setToken(v.replace(/\D/g, "").slice(0, 6))}
         />
         <Field
           label="New password"

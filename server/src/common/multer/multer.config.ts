@@ -128,18 +128,26 @@ export function documentMulterOptions(folder: string): MulterOptions {
         'application/javascript',
         'application/x-yaml',
         'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+        'image/heic',
+        'image/heif',
       ]);
       const docxMimes = [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       ];
       if (
         !file.mimetype.startsWith('text/') &&
+        !file.mimetype.startsWith('image/') &&
         !allowed.has(file.mimetype) &&
         !docxMimes.includes(file.mimetype)
       ) {
         return cb(
           new BadRequestException(
-            'Only text-like files, PDF, and DOCX are allowed.',
+            'Only text-like files, PDF, DOCX, and images (JPG, PNG, WEBP) are allowed.',
           ),
           false,
         );

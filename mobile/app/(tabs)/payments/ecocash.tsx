@@ -15,6 +15,14 @@ const METHOD_MAP: Record<string, PaymentMethod> = {
   bank: "bank_transfer",
 };
 
+// Maps the app's payment-method ids to PesePay's gateway method codes.
+const PESEPAY_METHOD_CODE: Record<string, string> = {
+  ecocash: "PZW211",
+  innbucks: "PZW212",
+  card: "PZW201",
+  bank: "PZW203",
+};
+
 export default function EcoCashPayment() {
   const {
     amount = "0.00",
@@ -40,6 +48,11 @@ export default function EcoCashPayment() {
       setError("Missing tenant — go back and start again.");
       return;
     }
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 9) {
+      setError(`Enter the ${m.name} number that will approve the payment.`);
+      return;
+    }
     setSubmitting(true);
     try {
       const amountMinor = String(Math.round(Number(amount) * 100));
@@ -52,7 +65,13 @@ export default function EcoCashPayment() {
       });
       router.push({
         pathname: "/(tabs)/payments/processing",
-        params: { paymentId: payment.id, amount, leaseId },
+        params: {
+          paymentId: payment.id,
+          amount,
+          leaseId,
+          phoneNumber: digits,
+          paymentMethodCode: PESEPAY_METHOD_CODE[method] ?? "PZW211",
+        },
       });
     } catch (err) {
       setError(apiErrorMessage(err));

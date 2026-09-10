@@ -193,14 +193,6 @@ export default function Payments() {
                 sub="Log a payment received from a tenant"
                 onPress={() => router.push("/(tabs)/payments/record")}
               />
-              <Divider />
-              <Row
-                icon="card-outline"
-                iconTint="#F96B1F"
-                title="Pay Rent"
-                sub="Tenant self-service payment"
-                onPress={() => router.push("/(tabs)/payments/pay-rent")}
-              />
             </Group>
 
             <SectionTitle>Outstanding balances</SectionTitle>

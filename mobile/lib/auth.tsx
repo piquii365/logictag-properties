@@ -1,14 +1,31 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { api, apiErrorMessage, BASE_URL, setRefreshHandler, setSessionToken } from "@/lib/api";
+import {
+  api,
+  apiErrorMessage,
+  BASE_URL,
+  setRefreshHandler,
+  setSessionToken,
+} from "@/lib/api";
 import type { UserRole } from "@/lib/roles";
 import {
   bufferToBase64Url,
-  getWebAuthn,
+  getPasskeySupportStatus,
+  isPasskeySupported,
+  nativeCreate,
+  nativeGet,
   passkeyErrorMessage,
-  publicKeyCredentialRequestOptionsFromJSON,
+  type PasskeySupportStatus,
+  type PublicKeyCredentialCreationOptionsJSON,
   type PublicKeyCredentialRequestOptionsJSON,
 } from "@/lib/webauthn";
 
@@ -46,6 +63,13 @@ export type RegisterInput = {
   role: UserRole;
 };
 
+export type PasskeySummary = {
+  id: string;
+  deviceName: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
 type AuthContextValue = {
   user: SessionUser | null;
   /** True until the initial silent /auth/refresh (via the httpOnly cookie) resolves. */
@@ -57,9 +81,17 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   /** True when the platform exposes a WebAuthn API (web / supported devices). */
   passkeySupported: boolean;
+  /** Detailed support status and diagnostics for passkeys. */
+  passkeyStatus: PasskeySupportStatus;
   /** Runs the passkey ceremony and resolves once signed in. Throws a friendly
    * error when the user cancels or no passkey is available. */
   signInWithPasskey: (email?: string) => Promise<void>;
+  /** Runs the passkey registration ceremony for the signed-in user. */
+  registerPasskey: (deviceName?: string) => Promise<PasskeySummary>;
+  /** Lists passkeys registered to the signed-in user. */
+  listPasskeys: () => Promise<PasskeySummary[]>;
+  /** Removes a passkey by its server ID. */
+  removePasskey: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (
@@ -96,7 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async (): Promise<boolean> => {
     try {
-      const body = await api<SessionBody>("/auth/refresh", { method: "POST", skipAuth: true });
+      const body = await api<SessionBody>("/auth/refresh", {
+        method: "POST",
+        skipAuth: true,
+      });
       setSessionToken(body.accessToken);
       setUser(await loadProfile());
       return true;
@@ -147,7 +182,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // this app's own scheme (e.g. logictagpropertiesmobile://) for that
     // redirect to land back in the app instead of a browser dead end.
     const redirectUrl = Linking.createURL("auth/callback");
-    const result = await WebBrowser.openAuthSessionAsync(`${BASE_URL}/auth/google`, redirectUrl);
+    const result = await WebBrowser.openAuthSessionAsync(
+      `${BASE_URL}/auth/google`,
+      redirectUrl,
+    );
 
     if (result.type !== "success") {
       // User closed the browser or backed out — not an error worth surfacing.
@@ -157,7 +195,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { queryParams } = Linking.parse(result.url);
     const accessToken = queryParams?.accessToken;
     if (typeof accessToken !== "string") {
-      throw new Error("Google sign-in didn't return a valid session. Please try again.");
+      throw new Error(
+        "Google sign-in didn't return a valid session. Please try again.",
+      );
     }
 
     setSessionToken(accessToken);
@@ -182,8 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithPasskey = useCallback(async (email?: string) => {
-    const webauthn = getWebAuthn();
-    if (!webauthn) {
+    if (!isPasskeySupported()) {
       throw new Error(
         "Passkeys aren't available on this device. Try signing in with your password.",
       );
@@ -201,11 +240,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // 2. Hand it to the platform authenticator.
-    let assertion: PublicKeyCredential | null;
+    //    react-native-passkeys accepts the server's JSON options directly —
+    //    no manual ArrayBuffer conversion required.
+    let assertion: Awaited<ReturnType<typeof nativeGet>>;
     try {
-      assertion = (await webauthn.get(
-        publicKeyCredentialRequestOptionsFromJSON(options),
-      )) as PublicKeyCredential | null;
+      assertion = await nativeGet(options);
     } catch (err) {
       throw new Error(passkeyErrorMessage(err));
     }
@@ -214,17 +253,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 3. Send the assertion back for verification; the server issues a session.
-    const response = assertion.response as AuthenticatorAssertionResponse;
+    //    On native the response fields are already base64url strings.
+    //    On web they are also base64url strings (react-native-passkeys web shim
+    //    handles the encoding), so the same path works everywhere.
     const body = await api<SessionBody>("/auth/passkey/login/verify", {
       method: "POST",
       skipAuth: true,
       body: {
         credentialId: assertion.id,
-        clientDataJSON: bufferToBase64Url(response.clientDataJSON),
-        authenticatorData: bufferToBase64Url(response.authenticatorData),
-        signature: bufferToBase64Url(response.signature),
-        ...(response.userHandle
-          ? { userHandle: bufferToBase64Url(response.userHandle) }
+        clientDataJSON: assertion.response.clientDataJSON,
+        authenticatorData: assertion.response.authenticatorData,
+        signature: assertion.response.signature,
+        ...(assertion.response.userHandle
+          ? { userHandle: assertion.response.userHandle }
           : {}),
       },
     });
@@ -232,19 +273,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await loadProfile());
   }, []);
 
-  const passkeySupported = useMemo(() => getWebAuthn() !== null, []);
+  const registerPasskey = useCallback(
+    async (deviceName?: string): Promise<PasskeySummary> => {
+      if (!isPasskeySupported()) {
+        throw new Error("Passkeys aren't supported on this device.");
+      }
+
+      // 1. Fetch registration options from the server (requires auth).
+      const options = await api<PublicKeyCredentialCreationOptionsJSON>(
+        "/auth/passkey/register/options",
+        { method: "POST" },
+      );
+
+      // 2. Run the native creation ceremony.
+      let credential: Awaited<ReturnType<typeof nativeCreate>>;
+      try {
+        credential = await nativeCreate(options);
+      } catch (err) {
+        throw new Error(passkeyErrorMessage(err));
+      }
+      if (!credential) {
+        throw new Error("Passkey registration was cancelled.");
+      }
+
+      // 3. Send the attestation back to the server.
+      //    On native, getPublicKey() returns a Base64URLString; on web it also
+      //    returns Base64URLString (the library normalises it).
+      const summary = await api<PasskeySummary>(
+        "/auth/passkey/register/verify",
+        {
+          method: "POST",
+          body: {
+            credentialId: credential.id,
+            clientDataJSON: credential.response.clientDataJSON,
+            attestationObject: credential.response.attestationObject,
+            deviceName: deviceName?.trim() || undefined,
+          },
+        },
+      );
+      return summary;
+    },
+    [],
+  );
+
+  const listPasskeys = useCallback(async (): Promise<PasskeySummary[]> => {
+    return api<PasskeySummary[]>("/auth/passkey");
+  }, []);
+
+  const removePasskey = useCallback(async (id: string): Promise<void> => {
+    await api(`/auth/passkey/${id}`, { method: "DELETE" });
+  }, []);
+
+  const passkeyStatus = useMemo(() => getPasskeySupportStatus(), []);
+  const passkeySupported = passkeyStatus.supported;
 
   const forgotPassword = useCallback(async (email: string) => {
-    await api("/auth/forgot-password", { method: "POST", skipAuth: true, body: { email } });
-  }, []);
-
-  const resetPassword = useCallback(async (email: string, token: string, newPassword: string) => {
-    await api("/auth/reset-password", {
+    await api("/auth/forgot-password", {
       method: "POST",
       skipAuth: true,
-      body: { email, token, newPassword },
+      body: { email },
     });
   }, []);
+
+  const resetPassword = useCallback(
+    async (email: string, token: string, newPassword: string) => {
+      await api("/auth/reset-password", {
+        method: "POST",
+        skipAuth: true,
+        body: { email, token, newPassword },
+      });
+    },
+    [],
+  );
 
   const requestEmailChange = useCallback(async (newEmail: string) => {
     const res = await api<{ message: string }>("/auth/email/request-change", {
@@ -278,7 +378,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signInWithGoogle,
       passkeySupported,
+      passkeyStatus,
       signInWithPasskey,
+      registerPasskey,
+      listPasskeys,
+      removePasskey,
       signOut,
       forgotPassword,
       resetPassword,
@@ -293,7 +397,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signInWithGoogle,
       passkeySupported,
+      passkeyStatus,
       signInWithPasskey,
+      registerPasskey,
+      listPasskeys,
+      removePasskey,
       signOut,
       forgotPassword,
       resetPassword,

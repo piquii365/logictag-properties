@@ -71,7 +71,7 @@ function SubscriptionForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
-  const [userId, setUserId] = useState(initial?.userId ?? "");
+  const [userId, setUserId] = useState(initial?.user?.id ?? "");
   const [planId, setPlanId] = useState(initial?.planId ?? plans[0]?.id ?? "");
   const [status, setStatus] = useState<Subscription["status"]>(
     initial?.status ?? "active",

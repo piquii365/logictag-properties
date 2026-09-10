@@ -51,6 +51,23 @@ export class LeasesController {
     return this.leases.update(user, id, dto);
   }
 
+  @Patch(':id/activate')
+  activate(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.leases.activate(user, id);
+  }
+
+  @Patch(':id/terminate')
+  terminate(
+    @CurrentUser() user: AuthJwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.leases.terminate(user, id, reason);
+  }
+
   @Get(':id/tenants')
   listTenants(
     @CurrentUser() user: AuthJwtPayload,

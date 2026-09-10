@@ -14,7 +14,7 @@ import refreshJwtConfig from './config/refresh-jwt.config';
 import {
   createHash,
   createHmac,
-  randomBytes,
+  randomInt,
   randomUUID,
   timingSafeEqual,
 } from 'crypto';
@@ -41,10 +41,19 @@ const INVALID_CREDENTIALS = 'Invalid credentials';
 const RESET_REQUESTED =
   'If an account with that email exists, a password reset link has been sent';
 
-const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+/** Reset / email-change codes are short-lived: 15 minutes. */
+const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 /** Same TTL for email-change confirmation codes. */
-const EMAIL_CHANGE_TOKEN_TTL_MS = 60 * 60 * 1000;
+const EMAIL_CHANGE_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+/**
+ * Six-digit numeric code, zero-padded (e.g. "004821"). Uses a CSPRNG so the
+ * code can't be guessed; the leading-zero pad keeps the keyspace a full 10^6.
+ */
+function generateNumericCode(): string {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0');
+}
 
 @Injectable()
 export class AuthService {
@@ -195,7 +204,7 @@ export class AuthService {
     const user = await this.userService.getUserForPasswordReset(email);
     // Always answer the same way, whether or not the account exists.
     if (user) {
-      const token = randomBytes(32).toString('hex');
+      const token = generateNumericCode();
       await this.userService.setPasswordResetToken(
         user.id,
         this.hashResetToken(token),
@@ -235,7 +244,7 @@ export class AuthService {
         'New email is the same as your current email',
       );
     }
-    const token = randomBytes(32).toString('hex');
+    const token = generateNumericCode();
     await this.userService.stageEmailChange(
       user.id,
       email,
@@ -303,16 +312,16 @@ export class AuthService {
         '',
         `Or open this link to continue: ${link}`,
         '',
-        'This code expires in 1 hour. If you did not request a reset you can',
+        'This code expires in 15 minutes. If you did not request a reset you can',
         'ignore this email — your password will not change.',
       ].join('\n'),
       html: this.wrapHtml(
         'Reset your password',
         `<p>We received a request to reset your LogicTag Properties password.</p>
          <p style="font-size:15px">Reset code:</p>
-         <p style="font-family:monospace;font-size:20px;letter-spacing:2px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
+         <p style="font-family:monospace;font-size:28px;letter-spacing:8px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
          <p><a href="${link}" style="color:#F96B1F">Open the reset page</a></p>
-         <p style="color:#6B7280;font-size:13px">This code expires in 1 hour. If you did not request a reset you can ignore this email — your password will not change.</p>`,
+         <p style="color:#6B7280;font-size:13px">This code expires in 15 minutes. If you did not request a reset you can ignore this email — your password will not change.</p>`,
       ),
     });
   }
@@ -326,14 +335,14 @@ export class AuthService {
         '',
         `Confirmation code: ${token}`,
         '',
-        'This code expires in 1 hour. If you did not request this change you',
+        'This code expires in 15 minutes. If you did not request this change you',
         'can ignore this email — your address will stay the same.',
       ].join('\n'),
       html: this.wrapHtml(
         'Confirm your new email',
         `<p>Use this code to confirm your new LogicTag Properties email address:</p>
-         <p style="font-family:monospace;font-size:20px;letter-spacing:2px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
-         <p style="color:#6B7280;font-size:13px">This code expires in 1 hour. If you did not request this change you can ignore this email — your address will stay the same.</p>`,
+         <p style="font-family:monospace;font-size:28px;letter-spacing:8px;background:#F4F6F9;padding:12px 16px;border-radius:8px">${token}</p>
+         <p style="color:#6B7280;font-size:13px">This code expires in 15 minutes. If you did not request this change you can ignore this email — your address will stay the same.</p>`,
       ),
     });
   }

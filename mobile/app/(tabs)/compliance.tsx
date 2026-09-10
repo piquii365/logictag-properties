@@ -75,6 +75,24 @@ const MONTHS = [
   { label: "December", value: "12" },
 ] as const;
 
+/** ZIMRA-related document categories a user can tag an upload with. */
+const DOCUMENT_TYPES = [
+  { label: "ITF263 (Tax Clearance)", value: "itf263" },
+  { label: "TIN Certificate", value: "tin_certificate" },
+  { label: "VAT Registration Certificate", value: "vat_certificate" },
+  { label: "VAT Return", value: "vat_return" },
+  { label: "Income Tax Return", value: "income_tax_return" },
+  { label: "PAYE Return", value: "paye_return" },
+  { label: "Withholding Tax Certificate", value: "withholding_certificate" },
+  { label: "Tax Clearance Certificate", value: "tax_clearance" },
+  { label: "ZIMRA Correspondence", value: "correspondence" },
+  { label: "Other", value: "other" },
+] as const;
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  DOCUMENT_TYPES.map((d) => [d.value, d.label]),
+);
+
 const CURRENCIES = [
   { label: "USD", value: "USD" },
   { label: "ZWG", value: "ZWG" },
@@ -128,6 +146,7 @@ export default function Compliance() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [documentType, setDocumentType] = useState<string>("itf263");
 
   // Return generation form
   const [returnTaxType, setReturnTaxType] = useState("income_tax");
@@ -188,6 +207,7 @@ export default function Compliance() {
         uri: asset.uri,
         name: asset.fileName ?? "document.jpg",
         type: asset.mimeType ?? "image/jpeg",
+        documentType,
       });
       await profiles.refetch();
     } catch (err) {
@@ -508,6 +528,13 @@ export default function Compliance() {
                     </View>
 
                     <SectionTitle>Documents</SectionTitle>
+                    <Select
+                      label="Document type"
+                      options={DOCUMENT_TYPES}
+                      value={documentType}
+                      onChange={setDocumentType}
+                      hint="Choose which ZIMRA document you're uploading."
+                    />
                     <Btn
                       label={uploading ? "Uploading..." : "Upload document"}
                       onPress={pickAndUploadDocument}
@@ -535,6 +562,9 @@ export default function Compliance() {
                                   {doc.name}
                                 </Text>
                                 <Text className="text-[11px] text-[#6B7280] mt-0.5">
+                                  {doc.documentType
+                                    ? `${DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType} · `
+                                    : ""}
                                   {new Date(
                                     doc.uploadedAt,
                                   ).toLocaleDateString()}
