@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
-import { Image } from "expo-image";
 import {
   Bar,
   Btn,
@@ -9,6 +8,7 @@ import {
   ErrorView,
   Group,
   Header,
+  Hero,
   LoadingView,
   Row,
   Screen,
@@ -22,7 +22,6 @@ import {
   getRentCharges,
 } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
-import { BASE_URL } from "@/lib/api";
 
 const OPEN_STATUSES = new Set([
   "open",
@@ -120,15 +119,9 @@ export default function PropertyDetail() {
           />
         ) : (
           <>
-            {p.imageUrls?.[0] ? (
-              <Image
-                source={`${BASE_URL}${p.imageUrls[0]}`}
-                contentFit="cover"
-                className="h-40 rounded-lg mb-4"
-              />
-            ) : null}
+            <Hero source={p.imageUrls?.[0]} />
 
-            <Text className="text-[16px] font-semibold text-[#0F2C4A]">
+            <Text className="text-[16px] font-semibold text-[#0F2C4A] mt-4">
               {p.address}
             </Text>
             <Text className="text-[13px] text-[#6B7280]">{p.city}</Text>
@@ -179,7 +172,7 @@ export default function PropertyDetail() {
               <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
                 Financial summary
               </Text>
-              <View className="flex-row">
+              <View className="flex-row border-t border-b border-[#E5E9F0] py-4">
                 <View className="flex-1">
                   <Text className="text-[12px] text-[#6B7280] mb-1">
                     Collected
@@ -188,7 +181,8 @@ export default function PropertyDetail() {
                     {money(collected)}
                   </Text>
                 </View>
-                <View className="flex-1">
+                <View className="w-px bg-[#E5E9F0]" />
+                <View className="flex-1 pl-4">
                   <Text className="text-[12px] text-[#6B7280] mb-1">
                     Outstanding
                   </Text>

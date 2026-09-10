@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -13,8 +13,13 @@ import {
   View,
   ViewProps,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/lib/data";
+import { BASE_URL } from "@/lib/api";
+
+/** Bundled fallback photo used when a property/unit has no uploaded image. */
+const FALLBACK_HERO = require("@/assets/images/bg1.jpg");
 
 export type Icon = keyof typeof Ionicons.glyphMap;
 
@@ -97,6 +102,28 @@ export function Screen({
     >
       {children}
     </ScrollView>
+  );
+}
+
+/**
+ * Full-bleed photo hero that fills the top of the screen. It breaks out of the
+ * parent Screen's 16px padding via negative margins, so it must be the first
+ * child of a default-padded `<Screen>`. Falls back to the bundled bg1.jpg when
+ * no source is given (e.g. a property with no uploaded image).
+ */
+export function Hero({
+  source,
+  height = 260,
+}: {
+  source?: string | null;
+  height?: number;
+}) {
+  return (
+    <ExpoImage
+      source={source ? { uri: `${BASE_URL}${source}` } : FALLBACK_HERO}
+      contentFit="cover"
+      style={{ height, marginHorizontal: -16, marginTop: -16 }}
+    />
   );
 }
 
@@ -197,8 +224,8 @@ export function Btn({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={`will-change-pressable flex-row items-center justify-center rounded-lg py-3.5 px-4 transition-transform duration-100 ease-out ${bg} ${
-        disabled ? "opacity-50" : "active:scale-[0.97]"
+      className={`flex-row items-center justify-center rounded-lg py-3.5 px-4 ${bg} ${
+        disabled ? "opacity-50" : ""
       } ${className}`}
     >
       {typeof icon === "string" ? (
@@ -252,6 +279,77 @@ export function Field({
           </Pressable>
         ) : null}
       </View>
+      {hint ? (
+        <Text className="text-xs text-[#6B7280] mt-1">{hint}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** Inline dropdown/select field. Tap to expand a list of options. */
+export function Select({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder = "Select an option",
+  hint,
+}: {
+  label?: string;
+  options: readonly { label: string; value: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  hint?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <View className="mb-4">
+      {label ? (
+        <Text className="text-[13px] text-[#6B7280] mb-1.5">{label}</Text>
+      ) : null}
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-3.5 py-3.5"
+      >
+        <Text
+          className={`text-[15px] ${selected ? "text-[#0F2C4A]" : "text-[#9CA3AF]"}`}
+        >
+          {selected?.label ?? placeholder}
+        </Text>
+        <Ionicons
+          name={open ? "chevron-up" : "chevron-down"}
+          size={18}
+          color="#9CA3AF"
+        />
+      </Pressable>
+      {open ? (
+        <View className="bg-white border border-[#E5E9F0] rounded-lg -mt-1 overflow-hidden">
+          {options.map((o) => (
+            <Pressable
+              key={o.value}
+              onPress={() => {
+                onChange(o.value);
+                setOpen(false);
+              }}
+              className={`px-4 py-3 active:bg-[#F8FAFC] ${
+                o.value === value ? "bg-[#F4F6F9]" : ""
+              }`}
+            >
+              <Text
+                className={`text-[14px] ${
+                  o.value === value
+                    ? "font-semibold text-[#0F2C4A]"
+                    : "text-[#0F2C4A]"
+                }`}
+              >
+                {o.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       {hint ? (
         <Text className="text-xs text-[#6B7280] mt-1">{hint}</Text>
       ) : null}
@@ -338,7 +436,7 @@ export function Pills({
         <Pressable
           key={o}
           onPress={() => onChange(o)}
-          className={`rounded-full px-4 py-2 border transition-transform duration-100 ease-out active:scale-95 ${
+          className={`rounded-full px-4 py-2 border ${
             value === o
               ? "bg-[#0F2C4A] border-[#0F2C4A]"
               : "bg-white border-[#E5E9F0]"
@@ -376,7 +474,7 @@ export function Row({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center py-3.5 px-4 bg-white transition-transform duration-100 ease-out active:scale-[0.98] active:bg-[#F8FAFC]"
+      className="flex-row items-center py-3.5 px-4 bg-white active:bg-[#F8FAFC]"
     >
       {icon ? (
         <Ionicons
@@ -482,7 +580,7 @@ export function Fab({ onPress }: { onPress?: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      className="absolute right-5 bottom-5 h-14 w-14 rounded-full bg-[#F96B1F] items-center justify-center transition-transform duration-100 ease-out active:scale-[0.93]"
+      className="absolute right-5 bottom-5 h-14 w-14 rounded-full bg-[#F96B1F] items-center justify-center"
     >
       <Ionicons name="add" size={28} color="#fff" />
     </Pressable>

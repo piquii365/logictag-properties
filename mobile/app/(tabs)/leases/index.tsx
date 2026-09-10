@@ -66,18 +66,15 @@ export default function Leases() {
                   >
                     <View className="flex-row items-start justify-between">
                       <Text className="text-[14px] font-semibold text-[#0F2C4A] flex-1 pr-3">
-                        {l.reference}
+                        {unit
+                          ? `${unit.label} · ${unit.property?.name ?? ""}`
+                          : "Lease"}
                       </Text>
                       <StatusText
                         text={l.status}
                         tone={STATUS_TONE[l.status]}
                       />
                     </View>
-                    <Text className="text-[12px] text-[#6B7280] mt-0.5">
-                      {unit
-                        ? `${unit.label} · ${unit.property?.name ?? ""}`
-                        : "—"}
-                    </Text>
                     <Text className="text-[12px] text-[#6B7280] mt-0.5">
                       {l.startDate} - {l.endDate ?? "ongoing"} · $
                       {(Number(l.rentAmountMinor) / 100).toFixed(2)}/

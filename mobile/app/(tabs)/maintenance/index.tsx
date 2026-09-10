@@ -112,7 +112,6 @@ export default function Maintenance() {
                     </Text>
                     <View className="flex-row items-center justify-between mt-2.5">
                       <Text className="text-[11px] text-[#94A3B8]">
-                        {r.reference} ·{" "}
                         {new Date(r.openedAt).toLocaleDateString()}
                       </Text>
                       <StatusText

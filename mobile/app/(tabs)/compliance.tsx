@@ -14,6 +14,7 @@ import {
   StatusText,
   Btn,
   Field,
+  Select,
 } from "@/components/ui";
 import { centsToDollars, money } from "@/lib/data";
 import { apiErrorMessage, BASE_URL } from "@/lib/api";
@@ -35,6 +36,15 @@ function statusTone(status: string): "green" | "amber" | "red" | "muted" {
   if (status === "due") return "amber";
   return "muted";
 }
+
+const TAXPAYER_TYPES = [
+  { label: "Individual", value: "individual" },
+  { label: "Company", value: "company" },
+  { label: "Trust", value: "trust" },
+  { label: "Partnership", value: "partnership" },
+  { label: "Non-profit organisation", value: "non_profit" },
+  { label: "Government / Parastatal", value: "government" },
+] as const;
 
 export default function Compliance() {
   const profiles = useFetch(getComplianceProfiles);
@@ -96,15 +106,20 @@ export default function Compliance() {
   }
 
   async function saveProfile() {
-    if (!tin.trim()) {
+    const cleanTin = tin.trim();
+    if (!cleanTin) {
       setFormError("TIN is required.");
+      return;
+    }
+    if (!/^\d{9}$/.test(cleanTin)) {
+      setFormError("TIN must be a 9-digit number (e.g. 012345678).");
       return;
     }
     setSaving(true);
     setFormError(null);
     try {
       await createComplianceProfile({
-        tin: tin.trim(),
+        tin: cleanTin,
         taxpayerName: taxpayerName.trim() || undefined,
         taxpayerType: taxpayerType.trim() || "individual",
       });
@@ -191,16 +206,24 @@ export default function Compliance() {
                 <Text className="text-[15px] font-semibold text-[#0F2C4A] mb-3">
                   Add ZIMRA details
                 </Text>
-                <Field label="TIN" value={tin} onChangeText={setTin} />
+                <Field
+                  label="TIN"
+                  value={tin}
+                  onChangeText={setTin}
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  hint="9-digit ZIMRA tax number"
+                />
                 <Field
                   label="Taxpayer name"
                   value={taxpayerName}
                   onChangeText={setTaxpayerName}
                 />
-                <Field
+                <Select
                   label="Taxpayer type"
+                  options={TAXPAYER_TYPES}
                   value={taxpayerType}
-                  onChangeText={setTaxpayerType}
+                  onChange={setTaxpayerType}
                 />
                 {formError ? (
                   <Text className="text-[13px] text-[#DC2626] mb-3">

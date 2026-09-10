@@ -1,13 +1,19 @@
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
-import { Btn, Field, Header, Screen } from "@/components/ui";
+import { Btn, Field, Header, Screen, Select } from "@/components/ui";
+import { ZIMBABWE_CITIES } from "@/lib/data";
 import {
   getProperty,
   updateProperty,
   uploadPropertyImage,
 } from "@/lib/queries";
+
+const BASE_CITY_OPTIONS = ZIMBABWE_CITIES.map((city) => ({
+  label: city,
+  value: city,
+}));
 
 export default function EditProperty() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,6 +22,15 @@ export default function EditProperty() {
   const [city, setCity] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Include the property's existing city even if it isn't in the standard list,
+  // so editing never silently drops a previously-saved custom value.
+  const cityOptions = useMemo(() => {
+    if (city && !BASE_CITY_OPTIONS.some((o) => o.value === city)) {
+      return [{ label: city, value: city }, ...BASE_CITY_OPTIONS];
+    }
+    return BASE_CITY_OPTIONS;
+  }, [city]);
 
   useEffect(() => {
     if (!id) return;
@@ -79,7 +94,13 @@ export default function EditProperty() {
       <Screen>
         <Field label="Property name" value={name} onChangeText={setName} />
         <Field label="Address" value={address} onChangeText={setAddress} />
-        <Field label="City" value={city} onChangeText={setCity} />
+        <Select
+          label="City"
+          options={cityOptions}
+          value={city}
+          onChange={setCity}
+          placeholder="Select a city"
+        />
         <Btn
           label="Add Image"
           icon="image-outline"

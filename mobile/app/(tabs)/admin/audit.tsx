@@ -39,7 +39,6 @@ export default function AdminAudit() {
                   </Text>
                   <Text className="text-[12px] text-[#6B7280] mt-0.5">
                     {log.entityType}
-                    {log.entityId ? ` · ${log.entityId.slice(0, 8)}` : ""}
                   </Text>
                 </View>
                 <Text className="text-[11px] text-[#6B7280]">

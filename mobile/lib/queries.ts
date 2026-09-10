@@ -16,6 +16,7 @@ import type {
   UtilityCharge,
   Vendor,
   Notification,
+  NotificationRecipient,
   FinancialSummary,
   AiPrediction,
   ComplianceProfile,
@@ -308,6 +309,22 @@ export const adminDeleteSubscription = (id: string) =>
 export const getNotifications = () => api<Notification[]>("/notifications");
 export const markNotificationRead = (id: string) =>
   api<Notification>(`/notifications/${id}/read`, { method: "PATCH" });
+/** Management: candidate tenant/vendor users they can message. */
+export const getNotificationRecipients = () =>
+  api<NotificationRecipient[]>("/notifications/recipients");
+/** Management: send a notice to a chosen set of recipients. */
+export const sendNotification = (dto: {
+  userIds: string[];
+  eventType: string;
+  subject: string;
+  body: string;
+}) => api<Notification[]>("/notifications/send", { method: "POST", body: dto });
+/** Tenant/vendor: message management. */
+export const replyToManagement = (dto: {
+  eventType: string;
+  subject: string;
+  body: string;
+}) => api<Notification[]>("/notifications/reply", { method: "POST", body: dto });
 export const getFinancialSummary = () =>
   api<FinancialSummary>("/ai/financial-summary");
 export const getAiPredictions = () =>

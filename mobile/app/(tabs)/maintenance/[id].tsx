@@ -89,7 +89,7 @@ export default function RequestDetail() {
 
   return (
     <View className="flex-1 bg-[#F4F6F9]">
-      <Header title={r?.reference ?? ""} right="ellipsis-horizontal" />
+      <Header title="Maintenance Request" right="ellipsis-horizontal" />
       <Screen>
         {request.loading ? (
           <LoadingView />

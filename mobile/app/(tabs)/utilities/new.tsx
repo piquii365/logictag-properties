@@ -1,11 +1,28 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Btn, Field, Header, Screen } from "@/components/ui";
+import { Btn, Field, Header, Screen, Select } from "@/components/ui";
 import { createUtility, getProperties } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
 
 const BILLING_METHODS = ["metered", "fixed", "apportioned"] as const;
+
+const UTILITY_TYPES = [
+  { label: "Electricity", value: "electricity" },
+  { label: "Water", value: "water" },
+  { label: "Gas", value: "gas" },
+  { label: "Sewerage", value: "sewerage" },
+  { label: "Refuse / Garbage", value: "refuse" },
+  { label: "Internet", value: "internet" },
+  { label: "Security", value: "security" },
+  { label: "Other", value: "other" },
+] as const;
+
+const APPORTION_BASIS = [
+  { label: "Equal split", value: "equal" },
+  { label: "By bedrooms", value: "bedrooms" },
+  { label: "By floor area", value: "floor_area" },
+] as const;
 
 export default function NewUtility() {
   const { propertyId: initialPropertyId } = useLocalSearchParams<{
@@ -79,12 +96,11 @@ export default function NewUtility() {
           onChangeText={setName}
           placeholder="e.g. Main electricity"
         />
-        <Field
+        <Select
           label="Utility type"
+          options={UTILITY_TYPES}
           value={type}
-          onChangeText={setType}
-          placeholder="electricity, water, gas"
-          autoCapitalize="none"
+          onChange={setType}
         />
         <Text className="text-[13px] text-[#6B7280] mb-2">Billing method</Text>
         <View className="flex-row gap-2 mb-4">
@@ -103,11 +119,11 @@ export default function NewUtility() {
           ))}
         </View>
         {billingMethod === "apportioned" ? (
-          <Field
+          <Select
             label="Apportion basis"
+            options={APPORTION_BASIS}
             value={apportionBasis}
-            onChangeText={setApportionBasis}
-            placeholder="equal, bedrooms, floor_area"
+            onChange={setApportionBasis}
           />
         ) : null}
         {error ? (

@@ -54,6 +54,7 @@ export default function TabsLayout() {
       {/* Reachable from tabs but not themselves tabs. */}
       <Tabs.Screen name="tenants" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="compose-notification" options={{ href: null }} />
       <Tabs.Screen name="vendors" options={{ href: null }} />
       <Tabs.Screen name="leases" options={{ href: null }} />
       <Tabs.Screen name="utilities" options={{ href: null }} />

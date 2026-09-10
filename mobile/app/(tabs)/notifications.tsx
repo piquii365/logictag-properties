@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import {
   Divider,
@@ -21,7 +22,11 @@ export default function Notifications() {
 
   return (
     <View className="flex-1 bg-[#F4F6F9]">
-      <Header title="Notifications" />
+      <Header
+        title="Notifications"
+        right="create-outline"
+        onRight={() => router.push("/(tabs)/compose-notification")}
+      />
       <Screen>
         {notifications.loading ? (
           <LoadingView />

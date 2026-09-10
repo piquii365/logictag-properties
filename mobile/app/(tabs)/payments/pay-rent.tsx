@@ -108,7 +108,7 @@ export default function PayRent() {
       <Header title="Pay Rent" />
       <Screen>
         <Text className="text-[13px] text-[#6B7280]">
-          {tenant.firstName} {tenant.lastName} · Lease {lease.reference}
+          {tenant.firstName} {tenant.lastName}
         </Text>
 
         <View className="mt-4 border-t border-b border-[#E5E9F0] py-5">

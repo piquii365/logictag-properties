@@ -2,8 +2,14 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Btn, Field, Header, Screen } from "@/components/ui";
+import { Btn, Field, Header, Screen, Select } from "@/components/ui";
+import { ZIMBABWE_CITIES } from "@/lib/data";
 import { createProperty, uploadPropertyImage } from "@/lib/queries";
+
+const CITY_OPTIONS = ZIMBABWE_CITIES.map((city) => ({
+  label: city,
+  value: city,
+}));
 
 export default function NewProperty() {
   const [name, setName] = useState("");
@@ -68,11 +74,12 @@ export default function NewProperty() {
           onChangeText={setAddress}
           placeholder="Street address"
         />
-        <Field
+        <Select
           label="City"
+          options={CITY_OPTIONS}
           value={city}
-          onChangeText={setCity}
-          placeholder="City"
+          onChange={setCity}
+          placeholder="Select a city"
         />
         <Btn
           label={image ? "Image selected" : "Add property image (optional)"}

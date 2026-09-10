@@ -9,6 +9,7 @@ import {
   ErrorView,
   Group,
   Header,
+  Hero,
   KV,
   LoadingView,
   Row,
@@ -86,7 +87,9 @@ export default function UnitDetail() {
           />
         ) : (
           <>
-            <View className="flex-row justify-end mb-3">
+            <Hero source={u.property?.imageUrls?.[0]} />
+
+            <View className="flex-row justify-end mt-4 mb-3">
               <Badge
                 text={STATUS_LABEL[u.status]}
                 tone={

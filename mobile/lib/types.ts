@@ -263,6 +263,14 @@ export type Notification = {
   createdAt: string;
 };
 
+/** A tenant/vendor user a management user can send a notice to. */
+export type NotificationRecipient = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
 export type FinancialSummary = {
   period: { from: string; to: string };
   currency: string;

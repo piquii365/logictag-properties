@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
 import {
   ErrorView,
   Fab,
@@ -14,7 +15,10 @@ import {
 } from "@/components/ui";
 import { getMyUnits, getProperties } from "@/lib/queries";
 import { useFetch } from "@/lib/useFetch";
+import { BASE_URL } from "@/lib/api";
 import type { Property, Unit } from "@/lib/types";
+
+const FALLBACK_THUMB = require("@/assets/images/bg1.jpg");
 
 const FILTERS = ["All", "Active", "Inactive"] as const;
 
@@ -38,9 +42,21 @@ function PropertyRow({ p, units }: { p: Property; units: Unit[] }) {
           params: { id: p.id },
         })
       }
-      className="flex-row items-center px-4 py-4 active:bg-[#F8FAFC]"
+      className="flex-row items-stretch active:bg-[#F8FAFC]"
     >
-      <View className="flex-1 pr-3">
+      {/* Full-height square thumbnail, flush to the card edge. The Group's
+          overflow-hidden clips its corners on the first/last row. */}
+      <Image
+        source={
+          p.imageUrls?.[0]
+            ? { uri: `${BASE_URL}${p.imageUrls[0]}` }
+            : FALLBACK_THUMB
+        }
+        contentFit="cover"
+        className="self-stretch bg-[#E5E9F0]"
+        style={{ aspectRatio: 1 }}
+      />
+      <View className="flex-1 justify-center px-4 py-4">
         <Text className="text-[15px] font-semibold text-[#0F2C4A]">
           {p.name}
         </Text>
@@ -49,10 +65,12 @@ function PropertyRow({ p, units }: { p: Property; units: Unit[] }) {
           {total} Unit{total === 1 ? "" : "s"} · {occupancy}% occupied
         </Text>
       </View>
-      <StatusDot
-        text={p.active ? "Active" : "Inactive"}
-        tone={p.active ? "green" : "muted"}
-      />
+      <View className="justify-center pr-4">
+        <StatusDot
+          text={p.active ? "Active" : "Inactive"}
+          tone={p.active ? "green" : "muted"}
+        />
+      </View>
     </Pressable>
   );
 }

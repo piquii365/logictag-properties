@@ -8,6 +8,7 @@ import {
   ErrorView,
   Group,
   Header,
+  Hero,
   LoadingView,
   Metric,
   Row,
@@ -120,9 +121,11 @@ function ManagementDashboard() {
         onRight={() => router.push("/(tabs)/notifications")}
       />
       <Screen>
+        <Hero source={properties.data?.[0]?.imageUrls?.[0]} />
+
         <Pressable
           onPress={() => setOpen((v) => !v)}
-          className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-4 py-3"
+          className="flex-row items-center justify-between bg-white border border-[#E5E9F0] rounded-lg px-4 py-3 mt-4"
         >
           <Text className="text-[14px] font-medium text-[#0F2C4A]">
             {scope}
@@ -304,7 +307,9 @@ function TenantDashboard() {
         onRight={() => router.push("/(tabs)/notifications")}
       />
       <Screen>
-        <Text className="text-[15px] text-[#6B7280] mb-1">
+        <Hero source={myUnit?.property?.imageUrls?.[0]} />
+
+        <Text className="text-[15px] text-[#6B7280] mb-1 mt-4">
           Hi {user?.name?.split(" ")[0] ?? "there"}
         </Text>
 
@@ -429,7 +434,9 @@ function VendorDashboard() {
         onRight={() => router.push("/(tabs)/notifications")}
       />
       <Screen>
-        <Text className="text-[15px] text-[#6B7280] mb-1">
+        <Hero />
+
+        <Text className="text-[15px] text-[#6B7280] mb-1 mt-4">
           Hi {user?.name?.split(" ")[0] ?? "there"}
         </Text>
 

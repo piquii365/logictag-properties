@@ -335,10 +335,6 @@ export default function SubscriptionManagement() {
                         <Text className="mt-1 text-[25px] font-bold text-white">
                           {currentPlan?.name ?? "—"}
                         </Text>
-
-                        <Text className="mt-1 text-[12px] text-[#D5E1EA]">
-                          Subscription #{subscription.id.slice(0, 8)}
-                        </Text>
                       </View>
 
                       <StatusBadge status={subscription.status} />
@@ -551,7 +547,6 @@ export default function SubscriptionManagement() {
                     Subscription information
                   </Text>
 
-                  <DetailRow label="Subscription ID" value={subscription.id} />
                   <DetailRow
                     label="Provider"
                     value={subscription.provider ?? "—"}
@@ -795,10 +790,11 @@ export default function SubscriptionManagement() {
                               )}
                             </Text>
 
-                            <Text className="text-[10px] text-[#6B7280]">
-                              {payment.providerReference ??
-                                payment.id.slice(0, 8)}
-                            </Text>
+                            {payment.providerReference ? (
+                              <Text className="text-[10px] text-[#6B7280]">
+                                {payment.providerReference}
+                              </Text>
+                            ) : null}
                           </View>
                         </Card>
                       ))

@@ -1,9 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Btn, Group, Header, Screen } from "@/components/ui";
 import { paymentMethods } from "@/lib/data";
+
+// Brand logos for the specific providers. Bank Transfer has no brand mark,
+// so it keeps its generic Ionicons glyph.
+const BRAND_LOGO: Record<string, number> = {
+  ecocash: require("@/assets/icons/EcoCash_logo.png"),
+  innbucks: require("@/assets/icons/InnBucks_logo.png"),
+  card: require("@/assets/icons/VisaMasterCard_logo.webp"),
+};
 
 export default function SelectMethod() {
   const { amount, tenantId, leaseId } = useLocalSearchParams<{
@@ -28,12 +37,25 @@ export default function SelectMethod() {
                   i ? "border-t border-[#E5E9F0]" : ""
                 }`}
               >
-                <Ionicons
-                  name={m.icon}
-                  size={20}
-                  color={active ? "#F96B1F" : "#0F2C4A"}
-                  style={{ marginRight: 12 }}
-                />
+                {BRAND_LOGO[m.id] ? (
+                  <View
+                    className="h-8 w-12 items-center justify-center"
+                    style={{ marginRight: 12 }}
+                  >
+                    <Image
+                      source={BRAND_LOGO[m.id]}
+                      contentFit="contain"
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </View>
+                ) : (
+                  <Ionicons
+                    name={m.icon}
+                    size={20}
+                    color={active ? "#F96B1F" : "#0F2C4A"}
+                    style={{ marginRight: 12 }}
+                  />
+                )}
                 <View className="flex-1">
                   <Text className="text-[15px] font-semibold text-[#0F2C4A]">
                     {m.name}

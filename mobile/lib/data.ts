@@ -12,6 +12,40 @@ export const C = {
   amber: "#D97706",
 };
 
+/** Zimbabwe cities/towns for property address selects. */
+export const ZIMBABWE_CITIES = [
+  "Harare",
+  "Bulawayo",
+  "Chitungwiza",
+  "Mutare",
+  "Gweru",
+  "Kwekwe",
+  "Kadoma",
+  "Masvingo",
+  "Chinhoyi",
+  "Marondera",
+  "Norton",
+  "Bindura",
+  "Beitbridge",
+  "Victoria Falls",
+  "Hwange",
+  "Kariba",
+  "Chegutu",
+  "Zvishavane",
+  "Rusape",
+  "Gokwe",
+  "Redcliff",
+  "Shurugwi",
+  "Chiredzi",
+  "Gwanda",
+  "Lupane",
+  "Mvurwi",
+  "Mazowe",
+  "Banket",
+  "Nyanga",
+  "Chimanimani",
+] as const;
+
 export const user = { name: "John", email: "manager@logicproperties.com", role: "Landlord" };
 
 export const dashboard = {

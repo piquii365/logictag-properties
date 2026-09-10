@@ -159,7 +159,7 @@ export class PropertiesService {
     if (user.role === UserRole.TENANT) {
       return this.units.find({
         where: { tenantId: user.id },
-        relations: { tenant: true },
+        relations: { tenant: true, property: true },
         order: { label: 'ASC' },
       });
     }

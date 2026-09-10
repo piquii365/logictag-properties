@@ -6,6 +6,7 @@ import {
   IsString,
   IsUUID,
   Length,
+  Matches,
   Max,
   Min,
 } from 'class-validator';
@@ -15,8 +16,9 @@ export class CreateZimraProfileDto {
   @IsUUID()
   organizationId?: string;
 
-  @IsString()
-  @Max(32)
+  @Matches(/^\d{9}$/, {
+    message: 'TIN must be a 9-digit number (e.g. 012345678)',
+  })
   tin!: string;
 
   @IsOptional()
