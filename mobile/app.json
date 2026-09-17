@@ -1,28 +1,33 @@
 {
   "expo": {
-    "name": "logictag-properties-mobile",
-    "slug": "logictag-properties-mobile",
+    "name": "LogicTag Properties",
+    "slug": "logictag-properties",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Logo.png",
-    "scheme": "logictagpropertiesmobile",
+
+    "icon": "./assets/images/app-icon.png",
+
+    "scheme": "logictagproperties",
+
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0F2C4A",
         "foregroundImage": "./assets/images/Logo.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/Logo.png"
     },
+
     "plugins": [
       "expo-router",
       [
@@ -39,8 +44,13 @@
         {
           "photosPermission": "LogicTag needs access to your photos to set a profile picture."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

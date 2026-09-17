@@ -5,7 +5,7 @@ import { C } from "@/lib/data";
 import { isManagementRole } from "@/lib/roles";
 
 function icon(name: keyof typeof Ionicons.glyphMap) {
-  function TabIcon({ color, size }: { color: string; size: number }) {
+  function TabIcon({ color, size }: { color: any; size: number }) {
     return <Ionicons name={name} size={size} color={color} />;
   }
   return TabIcon;

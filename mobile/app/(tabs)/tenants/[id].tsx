@@ -18,7 +18,10 @@ import {
 } from "@/components/ui";
 import { centsToDollars, money } from "@/lib/data";
 import { apiErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { isManagementRole } from "@/lib/roles";
 import {
+  activateLease,
   getLeases,
   getPayments,
   getRentCharges,
@@ -98,6 +101,10 @@ export default function TenantDetail() {
       tenantId ? getTenantIdentification(tenantId) : Promise.resolve(null),
     [tenantId],
   );
+
+  const { user } = useAuth();
+  const isManager = isManagementRole(user?.role);
+  const [activatingLease, setActivatingLease] = useState(false);
 
   const [idType, setIdType] = useState("national_id");
   const [idNumber, setIdNumber] = useState("");
@@ -191,22 +198,77 @@ export default function TenantDetail() {
                 {currentLease ? (
                   <Badge
                     text={currentLease.status}
-                    tone={currentLease.status === "active" ? "green" : "muted"}
+                    tone={
+                      currentLease.status === "active"
+                        ? "green"
+                        : currentLease.status === "draft"
+                          ? "amber"
+                          : "muted"
+                    }
                   />
                 ) : null}
               </View>
               {currentLease ? (
-                <View className="flex-row items-center">
-                  <Ionicons name="calendar-outline" size={15} color="#6B7280" />
-                  <Text className="text-[13px] text-[#0F2C4A] ml-2">
-                    {currentLease.startDate} -{" "}
-                    {currentLease.endDate ?? "ongoing"}
+                <>
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="calendar-outline"
+                      size={15}
+                      color="#6B7280"
+                    />
+                    <Text className="text-[13px] text-[#0F2C4A] ml-2">
+                      {currentLease.startDate} -{" "}
+                      {currentLease.endDate ?? "ongoing"}
+                    </Text>
+                  </View>
+                  <Text className="text-[12px] text-[#6B7280] mt-1">
+                    Ref: {currentLease.reference} · $
+                    {(Number(currentLease.rentAmountMinor) / 100).toFixed(2)}/
+                    {currentLease.currency}
                   </Text>
-                </View>
+                  {currentLease.status === "draft" && isManager ? (
+                    <Btn
+                      label={
+                        activatingLease
+                          ? "Activating..."
+                          : "Activate Draft Lease"
+                      }
+                      disabled={activatingLease}
+                      onPress={async () => {
+                        setActivatingLease(true);
+                        try {
+                          await activateLease(currentLease.id);
+                          await leases.refetch();
+                        } catch (err) {
+                          alert(apiErrorMessage(err));
+                        } finally {
+                          setActivatingLease(false);
+                        }
+                      }}
+                      className="mt-3"
+                    />
+                  ) : null}
+                </>
               ) : (
-                <Text className="text-[13px] text-[#6B7280]">
-                  No lease has been set up for this unit yet.
-                </Text>
+                <>
+                  <Text className="text-[13px] text-[#6B7280]">
+                    No lease has been set up for this unit yet.
+                  </Text>
+                  {isManager ? (
+                    <Btn
+                      label="Draft Lease for Unit"
+                      icon="document-text-outline"
+                      variant="outline"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/leases/create",
+                          params: { unitId, tenantId: u?.tenant?.id },
+                        })
+                      }
+                      className="mt-3"
+                    />
+                  ) : null}
+                </>
               )}
               <Text className="text-[13px] text-[#6B7280] mt-2">
                 {u.label} · {u.property?.name ?? "—"}

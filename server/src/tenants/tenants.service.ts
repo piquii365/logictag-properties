@@ -13,6 +13,7 @@ import { Unit } from '../properties/entities/unit.entity';
 import { UnitStatus } from '../properties/enums/unit-status.enum';
 import { Property } from '../properties/entities/property.entity';
 import { UserRole } from '../auth/enums/role.enum';
+import { LeaseStatus, RentFrequency } from '../common/enums/leasing.enum';
 import type { AuthJwtPayload } from '../auth/types/jwt-payload.auth';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -33,6 +34,8 @@ export class TenantsService {
   private tenants: Repository<Tenant>;
   private users: Repository<User>;
   private units: Repository<Unit>;
+  private leases: Repository<Lease>;
+  private leaseTenants: Repository<LeaseTenant>;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -41,6 +44,8 @@ export class TenantsService {
     this.tenants = dataSource.getRepository(Tenant);
     this.users = dataSource.getRepository(User);
     this.units = dataSource.getRepository(Unit);
+    this.leases = dataSource.getRepository(Lease);
+    this.leaseTenants = dataSource.getRepository(LeaseTenant);
   }
 
   async findAll(user: AuthJwtPayload): Promise<Tenant[]> {
@@ -112,9 +117,44 @@ export class TenantsService {
       if (unit.tenantId && unit.tenantId !== userId) {
         throw new ConflictException('This unit is already occupied');
       }
+      if (dto.rent !== undefined) {
+        unit.rent = String(dto.rent);
+      }
       unit.tenantId = userId;
       unit.status = UnitStatus.OCCUPIED;
       await this.units.save(unit);
+
+      const rentToUse =
+        dto.rent !== undefined
+          ? dto.rent
+          : unit.rent
+            ? Number(unit.rent)
+            : undefined;
+
+      const reference = `LSE-${Date.now().toString(36).toUpperCase()}`;
+      const draftLease = await this.leases.save(
+        this.leases.create({
+          unitId: unit.id,
+          reference,
+          startDate: dto.startDate ?? new Date().toISOString().slice(0, 10),
+          rentAmountMinor: Math.round((rentToUse ?? 0) * 100).toString(),
+          currency: 'USD',
+          frequency: dto.frequency ?? RentFrequency.MONTHLY,
+          rentDueDay: 1,
+          depositMinor: dto.deposit
+            ? Math.round(dto.deposit * 100).toString()
+            : '0',
+          status: LeaseStatus.DRAFT,
+          createdByUserId: user.id,
+        }),
+      );
+      await this.leaseTenants.save(
+        this.leaseTenants.create({
+          leaseId: draftLease.id,
+          tenantId: tenant.id,
+          isPrimary: true,
+        }),
+      );
     }
     if (temporaryPassword && dto.email && userId) {
       await this.notifications.createSystemNotification({

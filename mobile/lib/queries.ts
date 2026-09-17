@@ -50,8 +50,34 @@ export const getUnit = (unitId: string) =>
   api<Unit>(`/properties/units/${unitId}`);
 export const updateUnit = (
   unitId: string,
-  dto: { label?: string; floor?: string; bedrooms?: number; rent?: number },
+  dto: {
+    label?: string;
+    floor?: string;
+    bedrooms?: number;
+    rent?: number;
+    tenantId?: string | null;
+    startDate?: string;
+    frequency?: RentFrequency;
+    deposit?: number;
+    currency?: string;
+  },
 ) => api<Unit>(`/properties/units/${unitId}`, { method: "PATCH", body: dto });
+
+export const assignTenant = (
+  unitId: string,
+  dto: {
+    tenantId: string | null;
+    rent?: number;
+    startDate?: string;
+    frequency?: RentFrequency;
+    deposit?: number;
+    currency?: string;
+  },
+) =>
+  api<Unit>(`/properties/units/${unitId}/tenant`, {
+    method: "PATCH",
+    body: dto,
+  });
 
 export const createProperty = (dto: {
   name: string;
@@ -192,11 +218,16 @@ export const createTenant = (dto: {
   email?: string;
   phone: string;
   unitId?: string;
+  rent?: number;
+  startDate?: string;
+  frequency?: RentFrequency;
+  deposit?: number;
 }) => api<Tenant>("/tenants", { method: "POST", body: dto });
 
 // ── Leases & billing ──────────────────────────────────────────────
 
 export const getLeases = () => api<Lease[]>("/leases");
+export const getLease = (id: string) => api<Lease>(`/leases/${id}`);
 export const createLease = (dto: {
   unitId: string;
   reference?: string;

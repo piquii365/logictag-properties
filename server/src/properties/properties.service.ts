@@ -15,6 +15,10 @@ import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
 import { AssignTenantDto } from './dto/assign-tenant.dto';
 import { User } from '../users/entities/user.entity';
+import { Lease } from '../leases/entities/lease.entity';
+import { LeaseTenant } from '../leases/entities/lease-tenant.entity';
+import { Tenant } from '../tenants/entities/tenant.entity';
+import { LeaseStatus, RentFrequency } from '../common/enums/leasing.enum';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 /**
@@ -38,6 +42,9 @@ export class PropertiesService {
   private properties: Repository<Property>;
   private units: Repository<Unit>;
   private users: Repository<User>;
+  private leases: Repository<Lease>;
+  private leaseTenants: Repository<LeaseTenant>;
+  private tenants: Repository<Tenant>;
 
   constructor(
     dataSource: DataSource,
@@ -46,6 +53,9 @@ export class PropertiesService {
     this.properties = dataSource.getRepository(Property);
     this.units = dataSource.getRepository(Unit);
     this.users = dataSource.getRepository(User);
+    this.leases = dataSource.getRepository(Lease);
+    this.leaseTenants = dataSource.getRepository(LeaseTenant);
+    this.tenants = dataSource.getRepository(Tenant);
   }
 
   // ── Properties ────────────────────────────────────────────────
@@ -210,6 +220,91 @@ export class PropertiesService {
     );
   }
 
+  async syncDraftLease(params: {
+    unitId: string;
+    tenantId?: string | null;
+    rentAmount?: number | null;
+    startDate?: string;
+    frequency?: RentFrequency;
+    deposit?: number | null;
+    currency?: string;
+    userId?: string;
+  }): Promise<Lease | null> {
+    const existingDraft = await this.leases.findOne({
+      where: { unitId: params.unitId, status: LeaseStatus.DRAFT },
+      order: { createdAt: 'DESC' },
+    });
+    const existingActive = await this.leases.findOne({
+      where: { unitId: params.unitId, status: LeaseStatus.ACTIVE },
+      order: { createdAt: 'DESC' },
+    });
+
+    let targetLease: Lease | null = existingDraft;
+
+    const rentMinor =
+      params.rentAmount != null && params.rentAmount > 0
+        ? Math.round(params.rentAmount * 100).toString()
+        : null;
+
+    if (existingDraft) {
+      if (rentMinor) existingDraft.rentAmountMinor = rentMinor;
+      if (params.startDate) existingDraft.startDate = params.startDate;
+      if (params.frequency) existingDraft.frequency = params.frequency;
+      if (params.deposit != null) {
+        existingDraft.depositMinor = Math.round(
+          params.deposit * 100,
+        ).toString();
+      }
+      if (params.currency) existingDraft.currency = params.currency;
+      targetLease = await this.leases.save(existingDraft);
+    } else if (!existingActive && (rentMinor || params.tenantId)) {
+      const reference = `LSE-${Date.now().toString(36).toUpperCase()}`;
+      targetLease = await this.leases.save(
+        this.leases.create({
+          unitId: params.unitId,
+          reference,
+          startDate: params.startDate ?? new Date().toISOString().slice(0, 10),
+          rentAmountMinor: rentMinor ?? '0',
+          currency: params.currency ?? 'USD',
+          frequency: params.frequency ?? RentFrequency.MONTHLY,
+          rentDueDay: 1,
+          depositMinor: params.deposit
+            ? Math.round(params.deposit * 100).toString()
+            : '0',
+          status: LeaseStatus.DRAFT,
+          createdByUserId: params.userId ?? null,
+        }),
+      );
+    }
+
+    if (targetLease && params.tenantId) {
+      let tenant = await this.tenants.findOne({
+        where: { id: params.tenantId },
+      });
+      if (!tenant) {
+        tenant = await this.tenants.findOne({
+          where: { userId: params.tenantId },
+        });
+      }
+      if (tenant) {
+        const existingLt = await this.leaseTenants.findOne({
+          where: { leaseId: targetLease.id, tenantId: tenant.id },
+        });
+        if (!existingLt) {
+          await this.leaseTenants.save(
+            this.leaseTenants.create({
+              leaseId: targetLease.id,
+              tenantId: tenant.id,
+              isPrimary: true,
+            }),
+          );
+        }
+      }
+    }
+
+    return targetLease;
+  }
+
   async updateUnit(
     user: AuthJwtPayload,
     unitId: string,
@@ -219,11 +314,55 @@ export class PropertiesService {
     if (!unit) throw new NotFoundException('Unit not found');
     await this.findManageable(user, unit.propertyId);
     const prevStatus = unit.status;
+
+    if (dto.tenantId !== undefined) {
+      if (dto.tenantId) {
+        let tenantUser = await this.users.findOne({
+          where: { id: dto.tenantId },
+        });
+        if (!tenantUser) {
+          const tenantRecord = await this.tenants.findOne({
+            where: { id: dto.tenantId },
+          });
+          if (tenantRecord?.userId) {
+            tenantUser = await this.users.findOne({
+              where: { id: tenantRecord.userId },
+            });
+          }
+        }
+        if (tenantUser && tenantUser.role !== UserRole.TENANT) {
+          throw new ForbiddenException('That user is not a tenant');
+        }
+      }
+      unit.tenantId = dto.tenantId;
+      unit.status = dto.tenantId ? UnitStatus.OCCUPIED : UnitStatus.VACANT;
+    }
+
     Object.assign(unit, {
       ...dto,
       ...(dto.rent !== undefined ? { rent: String(dto.rent) } : {}),
     });
     const saved = await this.units.save(unit);
+
+    if (dto.rent !== undefined || dto.tenantId !== undefined) {
+      const rentToUse =
+        dto.rent !== undefined
+          ? dto.rent
+          : unit.rent
+            ? Number(unit.rent)
+            : undefined;
+      await this.syncDraftLease({
+        unitId: unit.id,
+        tenantId: unit.tenantId,
+        rentAmount: rentToUse,
+        startDate: dto.startDate,
+        frequency: dto.frequency,
+        deposit: dto.deposit,
+        currency: dto.currency,
+        userId: user.id,
+      });
+    }
+
     // Sync subscriptions if occupancy status may have changed
     if (saved.status !== prevStatus) {
       const property = await this.properties.findOne({
@@ -233,7 +372,7 @@ export class PropertiesService {
         await this.subscriptions.syncManagedUnitsForOwner(property.ownerId);
       }
     }
-    return saved;
+    return this.findUnit(user, unit.id);
   }
 
   /** Move a tenant into a unit, or (with tenantId: null) out of it. */
@@ -249,20 +388,51 @@ export class PropertiesService {
     const property = await this.findManageable(user, unit.propertyId);
 
     if (dto.tenantId) {
-      const tenant = await this.users.findOne({ where: { id: dto.tenantId } });
-      if (!tenant) {
-        throw new NotFoundException('Tenant not found');
+      let tenantUser = await this.users.findOne({
+        where: { id: dto.tenantId },
+      });
+      if (!tenantUser) {
+        const tenantRecord = await this.tenants.findOne({
+          where: { id: dto.tenantId },
+        });
+        if (tenantRecord?.userId) {
+          tenantUser = await this.users.findOne({
+            where: { id: tenantRecord.userId },
+          });
+        }
       }
-      if (tenant.role !== UserRole.TENANT) {
+      if (tenantUser && tenantUser.role !== UserRole.TENANT) {
         throw new ForbiddenException('That user is not a tenant');
       }
     }
 
     unit.tenantId = dto.tenantId ?? null;
     unit.status = dto.tenantId ? UnitStatus.OCCUPIED : UnitStatus.VACANT;
+    if (dto.rent !== undefined) {
+      unit.rent = String(dto.rent);
+    }
     const saved = await this.units.save(unit);
+
+    const rentToUse =
+      dto.rent !== undefined
+        ? dto.rent
+        : unit.rent
+          ? Number(unit.rent)
+          : undefined;
+
+    await this.syncDraftLease({
+      unitId: unit.id,
+      tenantId: dto.tenantId,
+      rentAmount: rentToUse,
+      startDate: dto.startDate,
+      frequency: dto.frequency,
+      deposit: dto.deposit,
+      currency: dto.currency,
+      userId: user.id,
+    });
+
     await this.subscriptions.syncManagedUnitsForOwner(property.ownerId);
-    return saved;
+    return this.findUnit(user, unit.id);
   }
 
   // ── Access rules ──────────────────────────────────────────────
